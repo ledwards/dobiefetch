@@ -1,10 +1,67 @@
-export type NormalizedRecord = {
+export type ShelterRecord = {
   id: string;
-  title: string;
-  url: string;
-  category: string | null;
-  summary: string | null;
-  tags: string[];
   source: string;
-  fetched_at: string; // ISO timestamp
+  client_id: string;
+  name: string;
+  address_line1: string | null;
+  city: string | null;
+  state: string | null;
+  zip: string | null;
+  phone: string | null;
+  email: string | null;
+  website_url: string | null;
+  location_label: string | null;
+  location_address_html: string | null;
+  ingested_at: string;
+};
+
+export type DogRecord = {
+  id: string;
+  source: string;
+  source_animal_id: string;
+  client_id: string;
+  name: string;
+  full_name: string | null;
+  animal_type: string;
+  primary_breed: string | null;
+  secondary_breed: string | null;
+  age: string | null;
+  gender: string | null;
+  size_category: string | null;
+  description_html: string | null;
+  bio_html: string | null;
+  more_info_html: string | null;
+  placement_info: string | null;
+  weight_lbs: number | null;
+  status: string | null;
+  shelter_id: string | null;
+  listing_url: string;
+  source_api_url: string;
+  data_updated_note: string | null;
+  filter_age: string | null;
+  filter_gender: string | null;
+  filter_size: string | null;
+  filter_dob: string | null;
+  filter_days_out: number | null;
+  filter_primary_breed: string | null;
+  ingested_at: string;
+  source_updated_at: string | null;
+  raw_payload: unknown;
+};
+
+export type PhotoRecord = {
+  id: string;
+  dog_id: string;
+  url: string;
+  is_primary: boolean;
+  position: number;
+  source: string;
+  ingested_at: string;
+};
+
+export type PetPlacePayload = {
+  imageURL?: string[];
+  ppRequired?: Array<Record<string, unknown>>;
+  animalDetail?: Array<Record<string, unknown>>;
+  clientDetail?: Array<Record<string, unknown>>;
 };

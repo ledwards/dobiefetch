@@ -54,8 +54,8 @@ export const createApp = () => {
     res.status(200).send("OK");
   });
 
-  app.get("/records", async (req, res) => {
-    const { q, category, source, tag, limit, offset } = req.query;
+  app.get("/dogs", async (req, res) => {
+    const { q, breed, age, gender, size, status, client_id, source_animal_id, limit, offset } = req.query;
 
     try {
       const db = await getDb();
@@ -70,19 +70,44 @@ export const createApp = () => {
       if (q && typeof q === "string") {
         const token = `%${q}%`;
         const ref = pushParam(token);
-        filters.push(`(title ILIKE ${ref} OR summary ILIKE ${ref} OR url ILIKE ${ref} OR tags::text ILIKE ${ref})`);
+        filters.push(
+          `(
+            d.name ILIKE ${ref}
+            OR d.primary_breed ILIKE ${ref}
+            OR d.secondary_breed ILIKE ${ref}
+            OR d.description_html ILIKE ${ref}
+            OR s.name ILIKE ${ref}
+          )`
+        );
       }
 
-      if (category && typeof category === "string") {
-        filters.push(`category = ${pushParam(category)}`);
+      if (breed && typeof breed === "string") {
+        const token = `%${breed}%`;
+        filters.push(`d.primary_breed ILIKE ${pushParam(token)}`);
       }
 
-      if (source && typeof source === "string") {
-        filters.push(`source = ${pushParam(source)}`);
+      if (age && typeof age === "string") {
+        filters.push(`d.age = ${pushParam(age)}`);
       }
 
-      if (tag && typeof tag === "string") {
-        filters.push(`tags @> ${pushParam(JSON.stringify([tag]))}::jsonb`);
+      if (gender && typeof gender === "string") {
+        filters.push(`d.gender = ${pushParam(gender)}`);
+      }
+
+      if (size && typeof size === "string") {
+        filters.push(`d.size_category = ${pushParam(size)}`);
+      }
+
+      if (status && typeof status === "string") {
+        filters.push(`d.status = ${pushParam(status)}`);
+      }
+
+      if (client_id && typeof client_id === "string") {
+        filters.push(`d.client_id = ${pushParam(client_id)}`);
+      }
+
+      if (source_animal_id && typeof source_animal_id === "string") {
+        filters.push(`d.source_animal_id = ${pushParam(source_animal_id)}`);
       }
 
       const where = filters.length > 0 ? `WHERE ${filters.join(" AND ")}` : "";
@@ -90,18 +115,59 @@ export const createApp = () => {
       const offsetValue = parseLimit(typeof offset === "string" ? offset : undefined, 0);
 
       const query = `
-      SELECT id, title, url, category, summary, tags, source, fetched_at
-      FROM records
-      ${where}
-      ORDER BY fetched_at DESC
-      LIMIT ${pushParam(limitValue)} OFFSET ${pushParam(offsetValue)}
-    `;
+        SELECT
+          d.id,
+          d.name,
+          d.primary_breed,
+          d.age,
+          d.gender,
+          d.size_category,
+          d.status,
+          d.listing_url,
+          d.source_animal_id,
+          d.client_id,
+          s.name AS shelter_name,
+          s.city AS shelter_city,
+          s.state AS shelter_state,
+          p.url AS primary_photo_url
+        FROM dogs d
+        LEFT JOIN shelters s ON d.shelter_id = s.id
+        LEFT JOIN LATERAL (
+          SELECT url
+          FROM photos
+          WHERE dog_id = d.id
+          ORDER BY is_primary DESC, position ASC
+          LIMIT 1
+        ) p ON true
+        ${where}
+        ORDER BY d.ingested_at DESC
+        LIMIT ${pushParam(limitValue)} OFFSET ${pushParam(offsetValue)}
+      `;
 
       const result = await db.query(query, params);
 
       res.json({
         count: result.rows.length,
-        records: result.rows
+        dogs: result.rows.map((row) => ({
+          id: row.id,
+          name: row.name,
+          breed_primary: row.primary_breed,
+          age: row.age,
+          gender: row.gender,
+          size_category: row.size_category,
+          status: row.status,
+          primary_photo_url: row.primary_photo_url,
+          detail_url: row.listing_url,
+          source_animal_id: row.source_animal_id,
+          client_id: row.client_id,
+          shelter: row.shelter_name
+            ? {
+                name: row.shelter_name,
+                city: row.shelter_city,
+                state: row.shelter_state
+              }
+            : null
+        }))
       });
     } catch (error) {
       const message = error instanceof Error ? error.message : "Database error";
@@ -109,20 +175,76 @@ export const createApp = () => {
     }
   });
 
-  app.get("/records/:id", async (req, res) => {
+  app.get("/dogs/:id", async (req, res) => {
     try {
       const db = await getDb();
-      const query = `
-      SELECT id, title, url, category, summary, tags, source, fetched_at
-      FROM records
-      WHERE id = $1
-      LIMIT 1
-    `;
-      const result = await db.query(query, [req.params.id]);
-      if (result.rows.length === 0) {
+      const dogQuery = `
+        SELECT d.*, s.name AS shelter_name, s.address_line1, s.city, s.state, s.zip,
+               s.phone, s.email, s.website_url, s.location_label, s.location_address_html
+        FROM dogs d
+        LEFT JOIN shelters s ON d.shelter_id = s.id
+        WHERE d.id = $1
+        LIMIT 1
+      `;
+
+      const dogResult = await db.query(dogQuery, [req.params.id]);
+      if (dogResult.rows.length === 0) {
         return res.status(404).json({ error: "Not found" });
       }
-      return res.json(result.rows[0]);
+
+      const dog = dogResult.rows[0];
+      const photosResult = await db.query(
+        `SELECT url, is_primary, position FROM photos WHERE dog_id = $1 ORDER BY position ASC`,
+        [dog.id]
+      );
+
+      return res.json({
+        id: dog.id,
+        source: dog.source,
+        source_animal_id: dog.source_animal_id,
+        client_id: dog.client_id,
+        name: dog.name,
+        full_name: dog.full_name,
+        animal_type: dog.animal_type,
+        primary_breed: dog.primary_breed,
+        secondary_breed: dog.secondary_breed,
+        age: dog.age,
+        gender: dog.gender,
+        size_category: dog.size_category,
+        description_html: dog.description_html,
+        bio_html: dog.bio_html,
+        more_info_html: dog.more_info_html,
+        placement_info: dog.placement_info,
+        weight_lbs: dog.weight_lbs,
+        status: dog.status,
+        listing_url: dog.listing_url,
+        source_api_url: dog.source_api_url,
+        data_updated_note: dog.data_updated_note,
+        filters: {
+          filter_age: dog.filter_age,
+          filter_gender: dog.filter_gender,
+          filter_size: dog.filter_size,
+          filter_dob: dog.filter_dob,
+          filter_days_out: dog.filter_days_out,
+          filter_primary_breed: dog.filter_primary_breed
+        },
+        shelter: dog.shelter_name
+          ? {
+              name: dog.shelter_name,
+              address_line1: dog.address_line1,
+              city: dog.city,
+              state: dog.state,
+              zip: dog.zip,
+              phone: dog.phone,
+              email: dog.email,
+              website_url: dog.website_url,
+              location_label: dog.location_label,
+              location_address_html: dog.location_address_html
+            }
+          : null,
+        photos: photosResult.rows,
+        ingested_at: dog.ingested_at
+      });
     } catch (error) {
       const message = error instanceof Error ? error.message : "Database error";
       return res.status(500).json({ error: message });

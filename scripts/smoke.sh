@@ -24,6 +24,6 @@ cleanup() {
 trap cleanup EXIT
 
 sleep 1
-curl -s -H "X-API-Key: $API_KEY" "http://localhost:${PORT:-3000}/records?limit=1" >/dev/null
+curl -s -H "X-API-Key: $API_KEY" "http://localhost:${PORT:-3000}/dogs?limit=1" >/dev/null
 
 echo "Smoke test completed"

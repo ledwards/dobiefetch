@@ -26,3 +26,9 @@ Smoke checks: `docs/smoke.md`
 
 - Dev creds: `npm run scrape:dev`
 - Prod creds: `npm run scrape:prod`
+
+Environment variables for search:
+- `PETPLACE_BREED` (default: `DOBERMAN PINSCH`)
+- `PETPLACE_ZIP` (default: `94110`)
+- `PETPLACE_RADIUS` (default: `100`)
+- `PETPLACE_SEARCH_URL` (optional full override)

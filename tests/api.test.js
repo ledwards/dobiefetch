@@ -20,18 +20,97 @@ if (!dbUrl) {
     await ensureSchema(dbUrl);
     const db = getPool(dbUrl);
 
-    await db.query("DELETE FROM records");
+    await db.query("DELETE FROM photos");
+    await db.query("DELETE FROM dogs");
+    await db.query("DELETE FROM shelters");
+
+    const shelterId = "shelter-test";
+    const dogId = "dog-test";
+
     await db.query(
-      `INSERT INTO records (id, title, url, category, summary, tags, source, fetched_at)
-       VALUES ($1, $2, $3, $4, $5, $6::jsonb, $7, $8)`,
+      `INSERT INTO shelters (id, source, client_id, name, address_line1, city, state, zip, phone, email, website_url, location_label, location_address_html, ingested_at)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14)`,
       [
-        "test-id",
-        "Test Title",
-        "https://example.com/test",
-        "test",
-        "Test summary",
-        JSON.stringify(["one", "two"]),
-        "example.com",
+        shelterId,
+        "petplace",
+        "CCST",
+        "Contra Costa County Animal Services",
+        "4800 Imhoff Place",
+        "Martinez",
+        "CA",
+        "94553",
+        "(925) 608-8400",
+        "test@example.com",
+        "https://example.com",
+        "Martinez",
+        "4800 Imhoff Place",
+        new Date().toISOString()
+      ]
+    );
+
+    await db.query(
+      `INSERT INTO dogs (
+        id, source, source_animal_id, client_id, name, full_name, animal_type,
+        primary_breed, secondary_breed, age, gender, size_category,
+        description_html, bio_html, more_info_html, placement_info,
+        weight_lbs, status, shelter_id, listing_url, source_api_url,
+        data_updated_note, filter_age, filter_gender, filter_size,
+        filter_dob, filter_days_out, filter_primary_breed,
+        ingested_at, source_updated_at, raw_payload
+      ) VALUES (
+        $1, $2, $3, $4, $5, $6, $7,
+        $8, $9, $10, $11, $12,
+        $13, $14, $15, $16,
+        $17, $18, $19, $20, $21,
+        $22, $23, $24, $25,
+        $26, $27, $28,
+        $29, $30, $31
+      )`,
+      [
+        dogId,
+        "petplace",
+        "A1042472",
+        "CCST",
+        "Mindy",
+        "Mindy (A1042472)",
+        "Dog",
+        "Doberman Pinscher",
+        null,
+        "Adult",
+        "Female",
+        "Large",
+        "Description",
+        "Bio",
+        "Available for adoption",
+        "",
+        68,
+        "available",
+        shelterId,
+        "https://www.petplace.com/pet-adoption/dogs/A1042472/CCST",
+        "https://api.petplace.com/animal/A1042472/client/CCST",
+        "Updated",
+        "A",
+        "F",
+        "L",
+        "2021-12-22",
+        39,
+        "DOBERMAN PINSCH",
+        new Date().toISOString(),
+        null,
+        JSON.stringify({ sample: true })
+      ]
+    );
+
+    await db.query(
+      `INSERT INTO photos (id, dog_id, url, is_primary, position, source, ingested_at)
+       VALUES ($1, $2, $3, $4, $5, $6, $7)`,
+      [
+        "photo-test",
+        dogId,
+        "https://example.com/photo.png",
+        true,
+        0,
+        "petplace",
         new Date().toISOString()
       ]
     );
@@ -56,13 +135,13 @@ if (!dbUrl) {
     assert.equal(text, "OK");
   });
 
-  test("records endpoint requires auth and returns data", async () => {
+  test("dogs endpoint requires auth and returns data", async () => {
     const { server, baseUrl } = await startServer();
 
-    const unauth = await fetch(`${baseUrl}/records`);
+    const unauth = await fetch(`${baseUrl}/dogs`);
     assert.equal(unauth.status, 401);
 
-    const auth = await fetch(`${baseUrl}/records`, {
+    const auth = await fetch(`${baseUrl}/dogs`, {
       headers: {
         "x-api-key": "test-key"
       }
@@ -72,6 +151,6 @@ if (!dbUrl) {
 
     assert.equal(auth.status, 200);
     assert.equal(body.count, 1);
-    assert.equal(body.records[0].id, "test-id");
+    assert.equal(body.dogs[0].name, "Mindy");
   });
 }

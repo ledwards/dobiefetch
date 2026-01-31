@@ -17,7 +17,7 @@
 
   <section>
     <h2>Overview</h2>
-    <p>This API provides read-only access to normalized records scraped from the target source.</p>
+    <p>This API provides read-only access to dog adoption listings scraped from PetPlace.</p>
     <ul>
       <li>Base URL: <code>https://dobiefetch.vercel.app</code> (local: <code>http://localhost:3000</code>)</li>
       <li>Auth: Shared secret via <code>X-API-Key</code> header or <code>Authorization: Bearer &lt;API_KEY&gt;</code></li>
@@ -28,21 +28,29 @@
   <section>
     <h2>Authentication</h2>
     <p>All endpoints except <code>/health</code> require authentication.</p>
-    <pre>GET /records
+    <pre>GET /dogs
 X-API-Key: your-secret</pre>
   </section>
 
   <section>
-    <h2>Record Schema</h2>
+    <h2>Dog Schema (summary)</h2>
     <pre>{
   "id": "string",
-  "title": "string",
-  "url": "string",
-  "category": "string|null",
-  "summary": "string|null",
-  "tags": ["string"],
-  "source": "string",
-  "fetched_at": "ISO-8601 timestamp"
+  "source_animal_id": "string",
+  "client_id": "string",
+  "name": "string",
+  "primary_breed": "string|null",
+  "age": "string|null",
+  "gender": "string|null",
+  "size_category": "string|null",
+  "status": "string|null",
+  "listing_url": "string",
+  "primary_photo_url": "string|null",
+  "shelter": {
+    "name": "string",
+    "city": "string|null",
+    "state": "string|null"
+  }
 }</pre>
   </section>
 
@@ -52,22 +60,26 @@ X-API-Key: your-secret</pre>
     <h3>GET /health</h3>
     <p>No auth required. Returns <code>200 OK</code> with body <code>OK</code>.</p>
 
-    <h3>GET /records</h3>
-    <p>List records with optional filters and search.</p>
+    <h3>GET /dogs</h3>
+    <p>List dogs with optional filters and search.</p>
     <ul>
-      <li><code>q</code>: substring search across title, summary, url, and tags</li>
-      <li><code>category</code>: exact match</li>
-      <li><code>source</code>: exact match</li>
-      <li><code>tag</code>: exact match against tags array</li>
-      <li><code>limit</code>: number of records (default 50, max 200)</li>
+      <li><code>q</code>: substring search across name, breeds, description, shelter name</li>
+      <li><code>breed</code>: substring match against primary breed</li>
+      <li><code>age</code>: exact match</li>
+      <li><code>gender</code>: exact match</li>
+      <li><code>size</code>: exact match</li>
+      <li><code>status</code>: exact match</li>
+      <li><code>client_id</code>: exact match</li>
+      <li><code>source_animal_id</code>: exact match</li>
+      <li><code>limit</code>: number of dogs (default 50, max 200)</li>
       <li><code>offset</code>: offset for pagination</li>
     </ul>
-    <pre>GET /records?q=cat&amp;category=care&amp;limit=10
+    <pre>GET /dogs?breed=Doberman&amp;limit=10
 X-API-Key: your-secret</pre>
 
-    <h3>GET /records/:id</h3>
-    <p>Fetch a single record by id.</p>
-    <pre>GET /records/abc123
+    <h3>GET /dogs/:id</h3>
+    <p>Fetch a single dog by internal id.</p>
+    <pre>GET /dogs/abc123
 X-API-Key: your-secret</pre>
   </section>
 
@@ -87,8 +99,6 @@ X-API-Key: your-secret</pre>
       <li><code>git push</code> to <code>main</code> deploys to Vercel automatically.</li>
       <li>Local dev reads <code>.env.dev</code>; local prod reads <code>.env.prod</code> when <code>DOBIE_ENV=prod</code> is set.</li>
       <li>Set <code>API_KEY</code>, <code>TARGET_URL</code>, and a database URL in Vercel environment variables.</li>
-      <li>If using Supabase + Vercel integration, the API reads <code>POSTGRES_URL</code> or <code>POSTGRES_URL_NON_POOLING</code>.</li>
-      <li>If not using the integration, set <code>DATABASE_URL</code> manually.</li>
       <li>Run <code>npm run migrate</code> with the same env vars to apply schema changes.</li>
     </ul>
   </section>

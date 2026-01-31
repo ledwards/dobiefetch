@@ -14,9 +14,9 @@
    - `GET https://dobiefetch.vercel.app/health`
    - Expect: `200 OK` with body `OK`
 2. Authenticated list
-   - `GET https://dobiefetch.vercel.app/records?limit=1`
+   - `GET https://dobiefetch.vercel.app/dogs?limit=1`
    - Header: `X-API-Key: <API_KEY>`
-   - Expect: `200 OK` with JSON payload containing `count` and `records`
+   - Expect: `200 OK` with JSON payload containing `count` and `dogs`
 
 ## Troubleshooting
 

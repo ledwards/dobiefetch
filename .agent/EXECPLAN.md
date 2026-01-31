@@ -1,4 +1,4 @@
-# Build API, Scraper, and Documentation for dobiefetch
+# Add PetPlace Adoption Schema and Scraper Pipeline
 
 This ExecPlan is a living document. The sections `Progress`, `Surprises & Discoveries`, `Decision Log`, and `Outcomes & Retrospective` must be kept up to date as work proceeds.
 
@@ -6,163 +6,139 @@ This plan is maintained according to `.agent/PLANS.md` and must remain fully sel
 
 ## Purpose / Big Picture
 
-After this change, a user can run a local scraper that collects data from the target source URL (TARGET_URL="https://www.petplace.com"), stores normalized records in a local database, and then start an API that serves those records with search and filtering. The API is private and requires a shared secret key. A novice can verify success by running the scraper, starting the API, and making an authenticated request that returns data. The project will also produce two docs files: a Markdown API spec for LLMs and a plain HTML page for humans.
+After this change, a user can run the scraper to collect PetPlace adoption data for dogs based on a search URL (breed + ZIP), store normalized dog listings and photos in Postgres, and serve them through the API. A novice can verify success by running the scraper against a single ZIP, starting the API, and fetching dogs and dog details from HTTP endpoints. The schema and API will match the real PetPlace JSON payload.
 
 ## Progress
 
-- [x] (2026-01-31 00:10Z) Read repo agent instructions and current environment (.agent/AGENTS.md, .agent/PLANS.md, .env).
-- [x] (2026-01-31 00:40Z) Draft and validate architecture choices for scraper, database, and API.
-- [x] (2026-01-31 01:05Z) Implement scraper with dry-run mode and idempotent writes.
-- [x] (2026-01-31 01:05Z) Implement API with authentication and search endpoints.
-- [x] (2026-01-31 01:15Z) Add documentation outputs (Markdown + HTML).
-- [x] (2026-01-31 01:20Z) Add minimal tests and a local smoke-test script.
-- [x] (2026-01-31 02:05Z) Switch persistence from SQLite to Postgres and update code/tests/docs.
-- [x] (2026-01-31 02:20Z) Prefer Supabase/Vercel Postgres env vars for database configuration.
-- [ ] Validate end-to-end and record outcomes.
+- [x] (2026-01-31 02:40Z) Read `.agent/AGENTS.md` and `.agent/PLANS.md` requirements for ExecPlans.
+- [x] (2026-01-31 03:10Z) Update ExecPlan to cover PetPlace API payload, schema, migrations, scraper, API changes, and tests.
+- [x] (2026-01-31 03:25Z) Replace database schema with dogs/shelters/photos/search tables and add indexes.
+- [x] (2026-01-31 03:40Z) Update shared types, scraper, and API to use PetPlace JSON payload.
+- [x] (2026-01-31 03:55Z) Update docs, smoke script, and env examples for new endpoints and search parameters.
+- [x] (2026-01-31 04:00Z) Update API tests to seed dog data and validate /dogs.
+- [ ] Validate end-to-end (migrate, scrape, serve, test) and record outcomes.
 
 ## Surprises & Discoveries
 
-- Observation: None yet.
-  Evidence: N/A.
+- Observation: PetPlace dog detail pages are mostly empty HTML shells; real data comes from `https://api.petplace.com/animal/{AnimalId}/client/{ClientId}`.
+  Evidence: Provided JSON payload includes `ppRequired`, `animalDetail`, and `imageURL` fields.
 
 ## Decision Log
 
-- Decision: Use a small Node.js + TypeScript implementation with Postgres for storage and simple SQL filtering.
-  Rationale: The user requires Vercel-hosted dev/prod databases; Postgres is the supported option and still keeps queries simple.
+- Decision: Scrape the PetPlace JSON API endpoint instead of the rendered HTML page.
+  Rationale: The HTML shell does not contain data; the JSON endpoint is structured and includes all dog fields.
   Date/Author: 2026-01-31 / Codex.
 
-- Decision: Use Express for the HTTP API and `pg` for Postgres access.
-  Rationale: Express keeps routing and middleware simple, while `pg` provides reliable Postgres access with Vercel support.
+- Decision: Extract listing IDs from search HTML using a URL regex for `/pet-adoption/dogs/{AnimalId}/{ClientId}`.
+  Rationale: No extra dependencies required, and the URL pattern is stable in search results.
   Date/Author: 2026-01-31 / Codex.
 
-- Decision: Export the Express app via `api/index.ts` for Vercel serverless deployment and keep `GET /health` unauthenticated.
-  Rationale: Vercel expects a handler export, and leaving `/health` open enables straightforward health checks while still protecting data endpoints.
-  Date/Author: 2026-01-31 / Codex.
-
-- Decision: Default to running the scraper on a home laptop (manual or local cron) while documenting proxy-based alternatives for hosted runs.
-  Rationale: The user expects IP-based blocking from host providers; local runs from a residential IP are most reliable with minimal integration risk.
+- Decision: Store the full raw payload alongside normalized columns.
+  Rationale: Keeps schema resilient to future field additions without a full migration and supports debugging.
   Date/Author: 2026-01-31 / Codex.
 
 ## Outcomes & Retrospective
 
-- Pending until implementation is complete.
+- Pending until validation is complete.
 
 ## Context and Orientation
 
-The repository is currently an empty skeleton with no application code. The root contains `.env` and `.env.example`. The `.env` file defines `TARGET_URL` and is the source target for scraping. There is no existing server or scraper. This plan will introduce a “collector” (scraper) and a “server” (API). The “collector” is a script that fetches pages from the target site, extracts fields, and writes them to a local SQLite database file. The “server” reads from that database and exposes endpoints for listing, filtering, and searching records.
+The repo already contains a working Express API and a TypeScript scraper in `src/collector/index.ts`. Postgres is used for storage via `src/shared/db.ts`. The current schema and API have now been updated to a dog-adoption model based on the PetPlace JSON payload. The scraper fetches a PetPlace search results page, extracts animal IDs and client IDs from listing URLs, then calls `https://api.petplace.com/animal/{AnimalId}/client/{ClientId}` to fetch detail JSON. Dogs, shelters, photos, and search metadata are stored in Postgres. The API exposes `GET /dogs` and `GET /dogs/:id` plus `/health`.
 
-A “normalized record” is the common schema shared by both scraper and API. It defines the fields that can be filtered or searched. “Idempotent” means rerunning the scraper does not create duplicate records or corrupt existing ones.
+Key files:
+- `data/schema.sql`: database schema migration for dogs/shelters/photos/search tables.
+- `src/shared/record.ts`: dog, shelter, photo, and payload types.
+- `src/collector/index.ts`: scraper entrypoint.
+- `src/server/app.ts`: Express API routes for dogs.
+- `docs/api.md` + `docs/api.html`: documentation.
+- `tests/api.test.js`: API tests.
+
+Terms:
+- “Search URL”: the PetPlace search endpoint with query params for zip and breed.
+- “Detail JSON”: PetPlace API endpoint returning a JSON payload with `ppRequired`, `animalDetail`, and `imageURL`.
 
 ## Plan of Work
 
-First, choose a simple project layout and create a normalized record schema. The schema will likely include fields like `id`, `title`, `url`, `category`, `summary`, `tags`, `source`, and timestamps. The scraper will extract these attributes from pages under the target site (TARGET_URL="https://www.petplace.com"). The scraper will support a dry-run mode that writes to a temp file or prints counts without writing to the database. For idempotence, the scraper will use a stable `id` derived from the source URL and upsert records into the SQLite table.
+First, update `data/schema.sql` to define new tables for `dogs`, `shelters`, `photos`, and `search_runs` + `search_results`. Include a JSONB column `raw_payload` on `dogs` and indexes on `(source, source_animal_id, client_id)`.
 
-Next, implement the API as a small Node.js server with a health endpoint and data endpoints. The API will require a shared secret key (for example `X-API-Key`) that is checked on every request. The API will support query parameters for filtering by attributes and a simple full-text search using SQL `LIKE` or SQLite FTS if needed. The server will read from the same SQLite database written by the scraper.
+Second, update shared TypeScript types in `src/shared/record.ts` to represent normalized dog records, shelters, and photos.
 
-Then, create documentation in two formats: a Markdown file for LLMs and a simple HTML file for humans. Both docs will describe endpoints, authentication, request/response schemas, examples, and error codes. The HTML file is for local viewing only and will not be deployed.
+Third, update the scraper in `src/collector/index.ts` to:
+- Build the search URL from `TARGET_URL` or `PETPLACE_SEARCH_URL` and env defaults.
+- Fetch the search HTML and extract listing IDs.
+- Fetch the detail JSON for each listing.
+- Normalize fields into dog, shelter, and photos tables.
+- Upsert by `(source, source_animal_id, client_id)` for idempotence.
+- Provide `--dry-run`, `--limit`, `--zip`, `--breed`, `--radius` flags.
 
-Finally, add minimal tests and a smoke-test script that runs the scraper in dry-run mode, writes sample data, starts the API, and performs an authenticated query. Update this ExecPlan as changes are made.
+Fourth, update the API in `src/server/app.ts` to expose:
+- `GET /dogs` with filters (breed, age, gender, size, status, client_id, source_animal_id) and pagination.
+- `GET /dogs/:id` returning full dog details and photos.
+- Keep `GET /health` unchanged.
+
+Fifth, update docs (`docs/api.md`, `docs/api.html`, `docs/smoke.md`, `README.md`, `.env.example`) to reflect new endpoints and fields.
+
+Finally, update tests:
+- `tests/api.test.js` seeds dog/shelter/photo data and validates `/dogs`.
 
 ## Concrete Steps
 
-1) Create a Node.js + TypeScript project scaffold with separate folders:
-   - `collector/` for the scraper
-   - `server/` for the API
-   - `data/` for the SQLite database and fixtures
-   - `docs/` for `api.md` and `api.html`
+1) Run migrations for local dev:
+   - Working directory: repo root
+   - Command: `npm run migrate:dev`
+   - Expect: `Schema applied.`
 
-2) Define a normalized schema in a shared module, for example `shared/record.ts`, and a SQLite migration in `data/schema.sql`.
+2) Scrape a small sample:
+   - Command: `npm run scrape:dev -- --limit=3`
+   - Expect: logs showing search URL, listings count, and `Upserted 3 dogs...`.
 
-3) Implement the scraper:
-   - Read `TARGET_URL` from `.env`.
-   - Crawl a bounded set of pages (start with a known index or sitemap if available).
-   - Extract attributes into the normalized schema.
-   - Upsert into SQLite by `id` to ensure idempotence.
-   - Support `--dry-run` and `--limit` flags.
+3) Start the API:
+   - Command: `npm start`
+   - Expect: server listens on `http://localhost:3000`.
 
-4) Implement the API:
-   - `GET /health` returns `OK`.
-   - `GET /records` lists data with optional query parameters (e.g., `category`, `tag`, `q` for search).
-   - `GET /records/:id` returns a single record.
-   - Require `X-API-Key` (or `Authorization: Bearer <key>`) on all endpoints.
+4) Query the API:
+   - Command: `curl -H "X-API-Key: <API_KEY>" "http://localhost:3000/dogs?limit=1"`
+   - Expect: JSON containing `count` and `dogs` array.
 
-5) Add documentation:
-   - `docs/api.md` for LLMs with concise, structured sections and JSON examples.
-   - `docs/api.html` as a human-readable mirror of the same content.
-
-6) Add minimal tests:
-   - Unit test for schema validation.
-   - Integration test for API auth + search.
-   - Add a local smoke-test script in `scripts/`.
-
-7) Validate end-to-end and update this ExecPlan sections (Progress, Decision Log, Outcomes).
+5) Run tests:
+   - Command: `npm test`
+   - Expect: tests pass (health + dogs endpoint).
 
 ## Validation and Acceptance
 
 A novice should be able to:
-
-- Run the scraper in dry-run mode and see output indicating how many records would be written.
-- Run the scraper in normal mode and see a SQLite file created or updated with records.
-- Start the API server and request `GET /health`, receiving HTTP 200 and `OK`.
-- Make an authenticated request to `GET /records` and receive JSON data.
-- Run the test command (to be defined) and see it pass.
+- Run `npm run migrate:dev` and see “Schema applied.”
+- Run `npm run scrape:dev -- --limit=3` and see “Upserted 3 dogs into DATABASE_URL.”
+- Start the API and query `GET /dogs` to receive at least one dog.
+- Query `GET /dogs/:id` for a known dog and receive full details including photos.
+- Run `npm test` and see it pass.
 
 ## Idempotence and Recovery
 
-- Rerunning the scraper should update existing rows and not create duplicates. This is enforced by an `id` unique key and UPSERT behavior.
-- If scraping fails partway, rerun with the same flags and it should converge to the same database state.
-- If the database becomes corrupt or mis-scraped, delete `data/records.sqlite` and rerun the scraper.
+- Scraper writes use UPSERT by `(source, source_animal_id, client_id)`; rerunning updates, not duplicates.
+- If scraping fails, rerun with the same flags.
+- If schema changes cause conflicts, rerun `npm run migrate:dev` to reapply schema.
 
 ## Artifacts and Notes
 
-Example expected output for a dry-run (illustrative):
+Expected example output:
 
-    $ node collector/index.js --dry-run --limit=10
-    Loaded TARGET_URL=https://www.petplace.com
-    Fetched 10 pages
-    Parsed 10 records
-    Dry-run: would upsert 10 records into data/records.sqlite
+    $ npm run scrape:dev -- --limit=1
+    Loaded search URL=https://www.petplace.com/pet-adoption/search?...zipPostal=94110...
+    Found 12 listings
+    Upserted 1 dogs into DATABASE_URL
 
 ## Interfaces and Dependencies
 
-- Node.js 20+ with TypeScript.
-- SQLite database via `better-sqlite3` or `sqlite3` (choose one and document in this plan when implemented).
-- HTTP server via `express` or a minimal Node.js server (choose one and document in this plan when implemented).
-- Shared schema module in `shared/record.ts`:
-
-    export type NormalizedRecord = {
-      id: string;
-      title: string;
-      url: string;
-      category: string | null;
-      summary: string | null;
-      tags: string[];
-      source: string;
-      fetched_at: string; // ISO timestamp
-    };
-
-## Scraper Hosting and IP-Blocking Mitigation Plan
-
-The default plan is to run the scraper on a home laptop (manual or a local cron task). This uses a residential IP and avoids common blocks aimed at data-center IPs. If automated hosted scraping becomes necessary, the plan is to use one of these approaches:
-
-- Use a residential proxy provider (paid) and configure the scraper to route requests through rotating residential IPs. This reduces blocking but adds cost and credentials management.
-- Use a small VPS in a less-blocked region plus aggressive politeness settings (low rate, random delays, and user-agent rotation). This is cheaper but may still be blocked.
-- Use a managed scraping API service that fetches pages and returns HTML for parsing. This offloads IP issues but changes the data flow and costs per request.
-
-These options will be documented for later adoption; implementation will start with the laptop-run approach.
+- Keep existing dependencies (`express`, `pg`, `dotenv`). No new third-party libs.
+- `src/shared/record.ts` defines `DogRecord`, `ShelterRecord`, `PhotoRecord`, and `PetPlacePayload`.
 
 ## Notes on Plan Updates
 
-When this plan changes, append a short note below describing what changed and why, with date and author.
-
-- Update: Marked implementation tasks complete, documented Express + better-sqlite3 choices, and Vercel handler decision.
-  Why: Implementation now exists in the repo and required concrete dependency and deployment choices.
+- Update: Re-scoped the ExecPlan to PetPlace adoption schema, JSON API scraper, and new dog endpoints.
+  Why: The project now targets adoption listings and needs a new normalized schema and API to match real payloads.
   Date/Author: 2026-01-31 / Codex.
 
-- Update: Switched persistence from SQLite to Postgres and updated configuration and docs.
-  Why: Requirement change to use Vercel-hosted Postgres for dev/prod.
-  Date/Author: 2026-01-31 / Codex.
-
-- Update: Added Supabase/Vercel env var support (`POSTGRES_URL` / `POSTGRES_URL_NON_POOLING`).
-  Why: User requested using Supabase-provided env vars instead of manual DATABASE_URL.
+- Update: Documented progress for schema/API/scraper/doc/test updates.
+  Why: Implementation work completed before final validation.
   Date/Author: 2026-01-31 / Codex.
