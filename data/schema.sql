@@ -29,7 +29,11 @@ CREATE TABLE IF NOT EXISTS dogs (
   animal_type TEXT NOT NULL,
   primary_breed TEXT,
   secondary_breed TEXT,
+  breed1 TEXT,
+  breed2 TEXT,
+  breed_display TEXT,
   age TEXT,
+  age_display TEXT,
   gender TEXT,
   size_category TEXT,
   description_html TEXT,
@@ -38,6 +42,16 @@ CREATE TABLE IF NOT EXISTS dogs (
   placement_info TEXT,
   weight_lbs NUMERIC,
   status TEXT,
+  cover_image_url TEXT,
+  located_at TEXT,
+  brought_to_shelter TEXT,
+  city TEXT,
+  state TEXT,
+  lat NUMERIC,
+  lon NUMERIC,
+  distance NUMERIC,
+  filter_breed_group TEXT,
+  client_sort INTEGER,
   shelter_id TEXT REFERENCES shelters(id),
   listing_url TEXT NOT NULL,
   source_api_url TEXT NOT NULL,
@@ -52,6 +66,22 @@ CREATE TABLE IF NOT EXISTS dogs (
   source_updated_at TIMESTAMPTZ,
   raw_payload JSONB NOT NULL
 );
+
+-- Ensure new columns exist when migrating an existing database.
+ALTER TABLE dogs ADD COLUMN IF NOT EXISTS breed1 TEXT;
+ALTER TABLE dogs ADD COLUMN IF NOT EXISTS breed2 TEXT;
+ALTER TABLE dogs ADD COLUMN IF NOT EXISTS breed_display TEXT;
+ALTER TABLE dogs ADD COLUMN IF NOT EXISTS age_display TEXT;
+ALTER TABLE dogs ADD COLUMN IF NOT EXISTS cover_image_url TEXT;
+ALTER TABLE dogs ADD COLUMN IF NOT EXISTS located_at TEXT;
+ALTER TABLE dogs ADD COLUMN IF NOT EXISTS brought_to_shelter TEXT;
+ALTER TABLE dogs ADD COLUMN IF NOT EXISTS city TEXT;
+ALTER TABLE dogs ADD COLUMN IF NOT EXISTS state TEXT;
+ALTER TABLE dogs ADD COLUMN IF NOT EXISTS lat NUMERIC;
+ALTER TABLE dogs ADD COLUMN IF NOT EXISTS lon NUMERIC;
+ALTER TABLE dogs ADD COLUMN IF NOT EXISTS distance NUMERIC;
+ALTER TABLE dogs ADD COLUMN IF NOT EXISTS filter_breed_group TEXT;
+ALTER TABLE dogs ADD COLUMN IF NOT EXISTS client_sort INTEGER;
 
 CREATE UNIQUE INDEX IF NOT EXISTS idx_dogs_source_animal_client ON dogs(source, source_animal_id, client_id);
 CREATE INDEX IF NOT EXISTS idx_dogs_breed ON dogs(primary_breed);

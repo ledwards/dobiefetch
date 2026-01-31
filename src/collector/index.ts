@@ -9,6 +9,19 @@ type SearchResult = {
   clientId: string;
   detailUrl: string;
   coverImagePath?: string | null;
+  breed1?: string | null;
+  breed2?: string | null;
+  breedDisplay?: string | null;
+  ageDisplay?: string | null;
+  broughtToShelter?: string | null;
+  locatedAt?: string | null;
+  city?: string | null;
+  state?: string | null;
+  lat?: number | null;
+  lon?: number | null;
+  distance?: number | null;
+  filterBreedGroup?: string | null;
+  clientSort?: number | null;
 };
 
 type RunOptions = {
@@ -155,11 +168,25 @@ const extractSearchResultsFromApi = (payload: Record<string, unknown>, baseUrl: 
     const clientId = toStringOrNull((item as Record<string, unknown>).clientId);
     if (!animalId || !clientId) continue;
     const detailUrl = new URL(`/pet-adoption/dogs/${animalId}/${clientId}`, baseUrl).toString();
+    const record = item as Record<string, unknown>;
     results.push({
       animalId,
       clientId,
       detailUrl,
-      coverImagePath: toStringOrNull((item as Record<string, unknown>).coverImagePath)
+      coverImagePath: toStringOrNull(record.coverImagePath),
+      breed1: toStringOrNull(record.Breed1),
+      breed2: toStringOrNull(record.Breed2),
+      breedDisplay: toStringOrNull(record.Breed),
+      ageDisplay: toStringOrNull(record.Age),
+      broughtToShelter: toStringOrNull(record["Brought to the shelter"]),
+      locatedAt: toStringOrNull(record["Located at"]),
+      city: toStringOrNull(record.City),
+      state: toStringOrNull(record.State),
+      lat: record.lat ? Number(record.lat) : null,
+      lon: record.lon ? Number(record.lon) : null,
+      distance: record.Distance ? Number(record.Distance) : null,
+      filterBreedGroup: toStringOrNull(record.filterBreedGroup),
+      clientSort: record.clientSort ? Number(record.clientSort) : null
     });
   }
   return results;
@@ -214,7 +241,7 @@ const fetchDetailPayload = async (animalId: string, clientId: string): Promise<P
   return (await response.json()) as PetPlacePayload;
 };
 
-const normalizeDog = (payload: PetPlacePayload, source: string, coverImagePath?: string | null) => {
+const normalizeDog = (payload: PetPlacePayload, source: string, searchResult?: SearchResult | null) => {
   const pp = payload.ppRequired?.[0] ?? {};
   const detail = payload.animalDetail?.[0] ?? {};
 
@@ -240,7 +267,11 @@ const normalizeDog = (payload: PetPlacePayload, source: string, coverImagePath?:
     animal_type: toStringOrNull(pp["Animal Type"]) ?? "Dog",
     primary_breed: toStringOrNull(pp["Primary Breed"]),
     secondary_breed: toStringOrNull(pp["Secondary Breed"]),
+    breed1: searchResult?.breed1 ?? null,
+    breed2: searchResult?.breed2 ?? null,
+    breed_display: searchResult?.breedDisplay ?? null,
     age: toStringOrNull(pp["Age"]),
+    age_display: searchResult?.ageDisplay ?? null,
     gender: toStringOrNull(pp["Gender"]),
     size_category: toStringOrNull(pp["Size Category"]),
     description_html: toStringOrNull(pp["Description"]),
@@ -249,6 +280,16 @@ const normalizeDog = (payload: PetPlacePayload, source: string, coverImagePath?:
     placement_info: toStringOrNull(detail["Placement Info"]),
     weight_lbs: parseWeight(detail["Weight"]),
     status: inferStatus(toStringOrNull(detail["More Info"])),
+    cover_image_url: searchResult?.coverImagePath ?? null,
+    located_at: searchResult?.locatedAt ?? null,
+    brought_to_shelter: searchResult?.broughtToShelter ?? null,
+    city: searchResult?.city ?? toStringOrNull(pp["City"]),
+    state: searchResult?.state ?? toStringOrNull(pp["State"]),
+    lat: searchResult?.lat ?? null,
+    lon: searchResult?.lon ?? null,
+    distance: searchResult?.distance ?? null,
+    filter_breed_group: searchResult?.filterBreedGroup ?? null,
+    client_sort: searchResult?.clientSort ?? null,
     shelter_id: shelterId,
     listing_url: listingUrl,
     source_api_url: sourceApiUrl,
@@ -261,7 +302,10 @@ const normalizeDog = (payload: PetPlacePayload, source: string, coverImagePath?:
     filter_primary_breed: toStringOrNull(pp["filterPrimaryBreed"]),
     ingested_at: ingestedAt,
     source_updated_at: null,
-    raw_payload: payload
+    raw_payload: {
+      detail: payload,
+      search: searchResult ?? null
+    }
   };
 
   const shelter: ShelterRecord = {
@@ -282,7 +326,10 @@ const normalizeDog = (payload: PetPlacePayload, source: string, coverImagePath?:
   };
 
   const photoUrls = payload.imageURL ?? [];
-  const normalizedCover = coverImagePath && !photoUrls.includes(coverImagePath) ? [coverImagePath] : [];
+  const normalizedCover =
+    searchResult?.coverImagePath && !photoUrls.includes(searchResult.coverImagePath)
+      ? [searchResult.coverImagePath]
+      : [];
   const photos: PhotoRecord[] = [...normalizedCover, ...photoUrls].map((url, index) => ({
     id: hashId(`${dogId}:${url}`),
     dog_id: dogId,
@@ -343,9 +390,12 @@ const upsertDog = async (db: ReturnType<typeof getPool>, dog: DogRecord) => {
   const query = `
     INSERT INTO dogs (
       id, source, source_animal_id, client_id, name, full_name, animal_type,
-      primary_breed, secondary_breed, age, gender, size_category,
+      primary_breed, secondary_breed, breed1, breed2, breed_display,
+      age, age_display, gender, size_category,
       description_html, bio_html, more_info_html, placement_info,
-      weight_lbs, status, shelter_id, listing_url, source_api_url,
+      weight_lbs, status, cover_image_url, located_at, brought_to_shelter,
+      city, state, lat, lon, distance, filter_breed_group, client_sort,
+      shelter_id, listing_url, source_api_url,
       data_updated_note, filter_age, filter_gender, filter_size,
       filter_dob, filter_days_out, filter_primary_breed,
       ingested_at, source_updated_at, raw_payload
@@ -353,10 +403,13 @@ const upsertDog = async (db: ReturnType<typeof getPool>, dog: DogRecord) => {
       $1, $2, $3, $4, $5, $6, $7,
       $8, $9, $10, $11, $12,
       $13, $14, $15, $16,
-      $17, $18, $19, $20, $21,
-      $22, $23, $24, $25,
-      $26, $27, $28,
-      $29, $30, $31
+      $17, $18, $19, $20,
+      $21, $22, $23, $24, $25,
+      $26, $27, $28, $29, $30, $31, $32,
+      $33, $34, $35,
+      $36, $37, $38, $39,
+      $40, $41, $42,
+      $43, $44, $45
     )
     ON CONFLICT (source, source_animal_id, client_id) DO UPDATE SET
       name = EXCLUDED.name,
@@ -364,7 +417,11 @@ const upsertDog = async (db: ReturnType<typeof getPool>, dog: DogRecord) => {
       animal_type = EXCLUDED.animal_type,
       primary_breed = EXCLUDED.primary_breed,
       secondary_breed = EXCLUDED.secondary_breed,
+      breed1 = EXCLUDED.breed1,
+      breed2 = EXCLUDED.breed2,
+      breed_display = EXCLUDED.breed_display,
       age = EXCLUDED.age,
+      age_display = EXCLUDED.age_display,
       gender = EXCLUDED.gender,
       size_category = EXCLUDED.size_category,
       description_html = EXCLUDED.description_html,
@@ -373,6 +430,16 @@ const upsertDog = async (db: ReturnType<typeof getPool>, dog: DogRecord) => {
       placement_info = EXCLUDED.placement_info,
       weight_lbs = EXCLUDED.weight_lbs,
       status = EXCLUDED.status,
+      cover_image_url = EXCLUDED.cover_image_url,
+      located_at = EXCLUDED.located_at,
+      brought_to_shelter = EXCLUDED.brought_to_shelter,
+      city = EXCLUDED.city,
+      state = EXCLUDED.state,
+      lat = EXCLUDED.lat,
+      lon = EXCLUDED.lon,
+      distance = EXCLUDED.distance,
+      filter_breed_group = EXCLUDED.filter_breed_group,
+      client_sort = EXCLUDED.client_sort,
       shelter_id = EXCLUDED.shelter_id,
       listing_url = EXCLUDED.listing_url,
       source_api_url = EXCLUDED.source_api_url,
@@ -398,7 +465,11 @@ const upsertDog = async (db: ReturnType<typeof getPool>, dog: DogRecord) => {
     dog.animal_type,
     dog.primary_breed,
     dog.secondary_breed,
+    dog.breed1,
+    dog.breed2,
+    dog.breed_display,
     dog.age,
+    dog.age_display,
     dog.gender,
     dog.size_category,
     dog.description_html,
@@ -407,6 +478,16 @@ const upsertDog = async (db: ReturnType<typeof getPool>, dog: DogRecord) => {
     dog.placement_info,
     dog.weight_lbs,
     dog.status,
+    dog.cover_image_url,
+    dog.located_at,
+    dog.brought_to_shelter,
+    dog.city,
+    dog.state,
+    dog.lat,
+    dog.lon,
+    dog.distance,
+    dog.filter_breed_group,
+    dog.client_sort,
     dog.shelter_id,
     dog.listing_url,
     dog.source_api_url,
@@ -500,7 +581,7 @@ const run = async () => {
   for (const result of sliced) {
     try {
       const payload = await fetchDetailPayload(result.animalId, result.clientId);
-      const normalized = normalizeDog(payload, "petplace", result.coverImagePath ?? null);
+      const normalized = normalizeDog(payload, "petplace", result);
 
       await db.query("BEGIN");
       const shelterId = await upsertShelter(db, normalized.shelter);

@@ -25,7 +25,11 @@ export type DogRecord = {
   animal_type: string;
   primary_breed: string | null;
   secondary_breed: string | null;
+  breed1: string | null;
+  breed2: string | null;
+  breed_display: string | null;
   age: string | null;
+  age_display: string | null;
   gender: string | null;
   size_category: string | null;
   description_html: string | null;
@@ -34,6 +38,16 @@ export type DogRecord = {
   placement_info: string | null;
   weight_lbs: number | null;
   status: string | null;
+  cover_image_url: string | null;
+  located_at: string | null;
+  brought_to_shelter: string | null;
+  city: string | null;
+  state: string | null;
+  lat: number | null;
+  lon: number | null;
+  distance: number | null;
+  filter_breed_group: string | null;
+  client_sort: number | null;
   shelter_id: string | null;
   listing_url: string;
   source_api_url: string;
