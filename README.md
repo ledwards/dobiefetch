@@ -29,7 +29,6 @@ Smoke checks: `docs/smoke.md`
 
 Environment variables for search:
 - `COLLECTOR_TARGET_BREED` (default: `DOBERMAN PINSCH`)
-- `COLLECTOR_TARGET_ZIP` (default: `94110`)
 - `COLLECTOR_TARGET_ZIPS` (default: CA zip list; comma-separated)
 - `COLLECTOR_TARGET_RADIUS` (default: `100`)
 - `COLLECTOR_TARGET_START_INDEX` (default: `0`)

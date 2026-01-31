@@ -50,10 +50,6 @@ const parseArgs = (argv: string[]): RunOptions => {
       args.set("delay-ms", arg.split("=")[1]);
       continue;
     }
-    if (arg.startsWith("--zip=")) {
-      args.set("zip", arg.split("=")[1]);
-      continue;
-    }
     if (arg.startsWith("--breed=")) {
       args.set("breed", arg.split("=")[1]);
       continue;
@@ -88,7 +84,6 @@ const parseArgs = (argv: string[]): RunOptions => {
         "92262",
         "92101"
       ];
-  const zip = (args.get("zip") as string) || process.env.COLLECTOR_TARGET_ZIP || zips[0] || "94110";
   const breed = (args.get("breed") as string) || process.env.COLLECTOR_TARGET_BREED || "DOBERMAN PINSCH";
   const radius = (args.get("radius") as string) || process.env.COLLECTOR_TARGET_RADIUS || "100";
   const searchUrlOverride = (args.get("search-url") as string) || process.env.COLLECTOR_TARGET_SEARCH_URL;
@@ -98,7 +93,6 @@ const parseArgs = (argv: string[]): RunOptions => {
     dryRun: Boolean(args.get("dry-run")),
     limit: Number(args.get("limit") ?? 25),
     delayMs: Number(args.get("delay-ms") ?? 250),
-    zip,
     zips,
     breed,
     radius,
@@ -595,7 +589,7 @@ const run = async () => {
   if (deduped.length === 0) {
     throw new Error(
       "No listings found. The source API returned no animals for the search filters. " +
-        "Verify COLLECTOR_TARGET_ZIP, COLLECTOR_TARGET_RADIUS, and COLLECTOR_TARGET_BREED."
+        "Verify COLLECTOR_TARGET_ZIPS, COLLECTOR_TARGET_RADIUS, and COLLECTOR_TARGET_BREED."
     );
   }
 
@@ -611,7 +605,7 @@ const run = async () => {
   await db.query(
     `INSERT INTO search_runs (id, zip_postal, breed, animal_type, search_url, started_at)
      VALUES ($1, $2, $3, $4, $5, $6)`,
-    [runId, options.zip, options.breed, "Dog", searchUrl.toString(), new Date().toISOString()]
+    [runId, options.zips.join(","), options.breed, "Dog", searchUrl.toString(), new Date().toISOString()]
   );
 
   let upserted = 0;
