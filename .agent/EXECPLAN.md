@@ -17,6 +17,7 @@ After this change, a user can run a local scraper that collects data from the ta
 - [x] (2026-01-31 01:15Z) Add documentation outputs (Markdown + HTML).
 - [x] (2026-01-31 01:20Z) Add minimal tests and a local smoke-test script.
 - [x] (2026-01-31 02:05Z) Switch persistence from SQLite to Postgres and update code/tests/docs.
+- [x] (2026-01-31 02:20Z) Prefer Supabase/Vercel Postgres env vars for database configuration.
 - [ ] Validate end-to-end and record outcomes.
 
 ## Surprises & Discoveries
@@ -160,4 +161,8 @@ When this plan changes, append a short note below describing what changed and wh
 
 - Update: Switched persistence from SQLite to Postgres and updated configuration and docs.
   Why: Requirement change to use Vercel-hosted Postgres for dev/prod.
+  Date/Author: 2026-01-31 / Codex.
+
+- Update: Added Supabase/Vercel env var support (`POSTGRES_URL` / `POSTGRES_URL_NON_POOLING`).
+  Why: User requested using Supabase-provided env vars instead of manual DATABASE_URL.
   Date/Author: 2026-01-31 / Codex.

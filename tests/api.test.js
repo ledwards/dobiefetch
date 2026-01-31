@@ -1,7 +1,11 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 
-const dbUrl = process.env.DATABASE_URL_TEST || process.env.DATABASE_URL;
+const dbUrl =
+  process.env.DATABASE_URL_TEST ||
+  process.env.DATABASE_URL ||
+  process.env.POSTGRES_URL ||
+  process.env.POSTGRES_URL_NON_POOLING;
 
 if (!dbUrl) {
   test("database configured", { skip: true }, () => {

@@ -84,7 +84,9 @@ X-API-Key: your-secret</pre>
     <ul>
       <li><code>api/index.ts</code> exports the Express app for Vercel serverless runtime.</li>
       <li><code>vercel.json</code> routes all requests to the API handler.</li>
-      <li>Set <code>API_KEY</code>, <code>DATABASE_URL</code>, and <code>TARGET_URL</code> in Vercel environment variables.</li>
+      <li>Set <code>API_KEY</code>, <code>TARGET_URL</code>, and a database URL in Vercel environment variables.</li>
+      <li>If using Supabase + Vercel integration, the API reads <code>POSTGRES_URL</code> or <code>POSTGRES_URL_NON_POOLING</code>.</li>
+      <li>If not using the integration, set <code>DATABASE_URL</code> manually.</li>
     </ul>
   </section>
 </body>

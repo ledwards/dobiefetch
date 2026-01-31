@@ -5,3 +5,5 @@ dist/
 /data/records.sqlite-journal
 /data/records.sqlite-wal
 /data/records.sqlite-shm
+.vercel
+.env*.local

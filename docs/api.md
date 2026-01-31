@@ -103,4 +103,6 @@ Responses:
 
 - `api/index.ts` exports the Express app for Vercel serverless runtime.
 - `vercel.json` routes all requests to the API handler.
-- Set `API_KEY`, `DATABASE_URL`, and `TARGET_URL` in Vercel environment variables.
+- Set `API_KEY`, `TARGET_URL`, and a database URL in Vercel environment variables.
+  - If using Supabase + Vercel integration, the code will use `POSTGRES_URL` or `POSTGRES_URL_NON_POOLING` automatically.
+  - If not using the integration, set `DATABASE_URL` manually.
