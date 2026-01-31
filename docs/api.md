@@ -94,7 +94,7 @@ X-API-Key: your-secret
 
 ### GET /dogs
 
-List dogs with optional filters and search. Returns full dog records (including photos and raw payload).
+List dogs with optional filters and search. Returns full dog records by default. Use `view=summary` to return a lighter payload.
 
 Query parameters:
 - `q`: substring search across name, breeds, description, shelter name
@@ -105,6 +105,7 @@ Query parameters:
 - `status`: exact match
 - `client_id`: exact match
 - `source_animal_id`: exact match
+- `view`: `summary` for a reduced response; omit for full records
 - `limit`: number of dogs (default 50, max 200)
 - `offset`: offset for pagination
 
@@ -112,6 +113,13 @@ Example:
 
 ```
 GET /dogs?breed=Doberman&limit=10
+X-API-Key: your-secret
+```
+
+Summary example:
+
+```
+GET /dogs?breed=Doberman&limit=10&view=summary
 X-API-Key: your-secret
 ```
 

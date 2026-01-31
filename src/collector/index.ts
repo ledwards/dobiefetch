@@ -541,27 +541,21 @@ const run = async () => {
   const options = parseArgs(process.argv.slice(2));
   const searchUrl = buildSearchUrl(options);
 
-  const response = await fetch(searchUrl.toString(), {
-    headers: {
-      "User-Agent": "dobiefetch/0.1 (+https://example.local)"
-    }
-  });
-
-  if (!response.ok) {
-    throw new Error(`Search fetch failed (${response.status})`);
-  }
-
   let results: SearchResult[] = [];
-  if (searchUrl.hostname === "api.petplace.com" && searchUrl.pathname.startsWith("/animal")) {
+  if (options.searchUrlOverride && searchUrl.hostname === "api.petplace.com") {
+    const response = await fetch(searchUrl.toString(), {
+      headers: {
+        "User-Agent": "dobiefetch/0.1 (+https://example.local)"
+      }
+    });
+    if (!response.ok) {
+      throw new Error(`Search fetch failed (${response.status})`);
+    }
     const payload = (await response.json()) as Record<string, unknown>;
     results = extractSearchResultsFromApi(payload, searchUrl);
   } else {
-    const html = await response.text();
-    results = extractSearchResults(html, searchUrl);
-    if (results.length === 0) {
-      const zipResults = await Promise.all(options.zips.map((zip) => fetchSearchResultsFromApi(options, zip)));
-      results = zipResults.flat();
-    }
+    const zipResults = await Promise.all(options.zips.map((zip) => fetchSearchResultsFromApi(options, zip)));
+    results = zipResults.flat();
   }
   const seen = new Set<string>();
   const deduped = results.filter((item) => {

@@ -18,6 +18,7 @@ After this change, a user can run the scraper to collect PetPlace adoption data 
 - [x] (2026-01-31 04:00Z) Update API tests to seed dog data and validate /dogs.
 - [x] (2026-01-31 04:20Z) Expand scraper to iterate CA zip codes, dedupe results, and update docs/env examples.
 - [x] (2026-01-31 04:40Z) Expose full dog schema in API responses and update docs accordingly.
+- [x] (2026-01-31 04:55Z) Add `view=summary` to `/dogs` and switch scraper to API-first zip iteration.
 - [ ] Validate end-to-end (migrate, scrape, serve, test) and record outcomes.
 
 ## Surprises & Discoveries
@@ -47,6 +48,14 @@ After this change, a user can run the scraper to collect PetPlace adoption data 
 
 - Decision: Return full dog records from `/dogs` instead of a summary.
   Rationale: User requested “expose EVERYTHING” and keep docs aligned with API output.
+  Date/Author: 2026-01-31 / Codex.
+
+- Decision: Add `view=summary` as an opt-in reduced payload for `/dogs`.
+  Rationale: Keeps full data access while offering a lighter response for list views.
+  Date/Author: 2026-01-31 / Codex.
+
+- Decision: Default scraper to the PetPlace search API with the CA zip list.
+  Rationale: HTML search page is client-rendered; API results are reliable and cover multiple zips.
   Date/Author: 2026-01-31 / Codex.
 
 - Decision: Store the full raw payload alongside normalized columns.

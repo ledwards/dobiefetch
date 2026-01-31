@@ -105,7 +105,7 @@ X-API-Key: your-secret</pre>
     <p>No auth required. Returns <code>200 OK</code> with body <code>OK</code>.</p>
 
     <h3>GET /dogs</h3>
-    <p>List dogs with optional filters and search. Returns full dog records (including photos and raw payload).</p>
+    <p>List dogs with optional filters and search. Returns full dog records by default. Use <code>view=summary</code> for a reduced payload.</p>
     <ul>
       <li><code>q</code>: substring search across name, breeds, description, shelter name</li>
       <li><code>breed</code>: substring match against primary breed</li>
@@ -115,10 +115,13 @@ X-API-Key: your-secret</pre>
       <li><code>status</code>: exact match</li>
       <li><code>client_id</code>: exact match</li>
       <li><code>source_animal_id</code>: exact match</li>
+      <li><code>view</code>: <code>summary</code> for a reduced response; omit for full records</li>
       <li><code>limit</code>: number of dogs (default 50, max 200)</li>
       <li><code>offset</code>: offset for pagination</li>
     </ul>
     <pre>GET /dogs?breed=Doberman&amp;limit=10
+X-API-Key: your-secret</pre>
+    <pre>GET /dogs?breed=Doberman&amp;limit=10&amp;view=summary
 X-API-Key: your-secret</pre>
 
     <h3>GET /dogs/:id</h3>
