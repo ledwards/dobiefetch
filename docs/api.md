@@ -103,5 +103,4 @@ Responses:
 
 - `api/index.ts` exports the Express app for Vercel serverless runtime.
 - `vercel.json` routes all requests to the API handler.
-- Set `API_KEY`, `DB_PATH`, and `TARGET_URL` in Vercel environment variables.
-
+- Set `API_KEY`, `DATABASE_URL`, and `TARGET_URL` in Vercel environment variables.

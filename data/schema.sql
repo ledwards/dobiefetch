@@ -4,9 +4,9 @@ CREATE TABLE IF NOT EXISTS records (
   url TEXT NOT NULL,
   category TEXT,
   summary TEXT,
-  tags TEXT NOT NULL,
+  tags JSONB NOT NULL DEFAULT '[]'::jsonb,
   source TEXT NOT NULL,
-  fetched_at TEXT NOT NULL
+  fetched_at TIMESTAMPTZ NOT NULL
 );
 
 CREATE INDEX IF NOT EXISTS idx_records_title ON records(title);

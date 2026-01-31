@@ -16,6 +16,7 @@ After this change, a user can run a local scraper that collects data from the ta
 - [x] (2026-01-31 01:05Z) Implement API with authentication and search endpoints.
 - [x] (2026-01-31 01:15Z) Add documentation outputs (Markdown + HTML).
 - [x] (2026-01-31 01:20Z) Add minimal tests and a local smoke-test script.
+- [x] (2026-01-31 02:05Z) Switch persistence from SQLite to Postgres and update code/tests/docs.
 - [ ] Validate end-to-end and record outcomes.
 
 ## Surprises & Discoveries
@@ -25,12 +26,12 @@ After this change, a user can run a local scraper that collects data from the ta
 
 ## Decision Log
 
-- Decision: Use a small Node.js + TypeScript implementation with SQLite for local storage and a simple search index using SQL queries.
-  Rationale: TypeScript keeps API and scraper in one language, SQLite keeps setup minimal and avoids extra infrastructure while meeting the “database” requirement, and SQL queries are enough for attribute-based filtering.
+- Decision: Use a small Node.js + TypeScript implementation with Postgres for storage and simple SQL filtering.
+  Rationale: The user requires Vercel-hosted dev/prod databases; Postgres is the supported option and still keeps queries simple.
   Date/Author: 2026-01-31 / Codex.
 
-- Decision: Use Express for the HTTP API and better-sqlite3 for SQLite access.
-  Rationale: Express keeps routing and middleware simple, while better-sqlite3 provides reliable, synchronous SQLite access without extra infrastructure.
+- Decision: Use Express for the HTTP API and `pg` for Postgres access.
+  Rationale: Express keeps routing and middleware simple, while `pg` provides reliable Postgres access with Vercel support.
   Date/Author: 2026-01-31 / Codex.
 
 - Decision: Export the Express app via `api/index.ts` for Vercel serverless deployment and keep `GET /health` unauthenticated.
@@ -155,4 +156,8 @@ When this plan changes, append a short note below describing what changed and wh
 
 - Update: Marked implementation tasks complete, documented Express + better-sqlite3 choices, and Vercel handler decision.
   Why: Implementation now exists in the repo and required concrete dependency and deployment choices.
+  Date/Author: 2026-01-31 / Codex.
+
+- Update: Switched persistence from SQLite to Postgres and updated configuration and docs.
+  Why: Requirement change to use Vercel-hosted Postgres for dev/prod.
   Date/Author: 2026-01-31 / Codex.

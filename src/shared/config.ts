@@ -14,6 +14,6 @@ export const config = {
   targetUrl: process.env.TARGET_URL ?? "",
   apiKey: process.env.API_KEY ?? "",
   port: Number(process.env.PORT ?? 3000),
-  dbPath: process.env.DB_PATH ?? "data/records.sqlite",
+  dbUrl: process.env.DATABASE_URL ?? "",
   requireEnv: requiredEnv
 };

@@ -1,8 +1,9 @@
 import express from "express";
 import { config } from "../shared/config.js";
-import { openDb } from "../shared/db.js";
+import { ensureSchema, getPool } from "../shared/db.js";
 
-const db = openDb(config.dbPath);
+await ensureSchema(config.dbUrl);
+const db = getPool(config.dbUrl);
 
 const getApiKey = (req: express.Request): string | null => {
   const headerKey = req.header("x-api-key");
@@ -43,73 +44,67 @@ export const createApp = () => {
     res.status(200).send("OK");
   });
 
-  app.get("/records", (req, res) => {
+  app.get("/records", async (req, res) => {
     const { q, category, source, tag, limit, offset } = req.query;
 
     const filters: string[] = [];
-    const params: Record<string, string | number> = {};
+    const params: Array<string | number> = [];
+
+    const pushParam = (value: string | number) => {
+      params.push(value);
+      return `$${params.length}`;
+    };
 
     if (q && typeof q === "string") {
-      filters.push("(title LIKE @q OR summary LIKE @q OR url LIKE @q OR tags LIKE @q)");
-      params.q = `%${q}%`;
+      const token = `%${q}%`;
+      const ref = pushParam(token);
+      filters.push(`(title ILIKE ${ref} OR summary ILIKE ${ref} OR url ILIKE ${ref} OR tags::text ILIKE ${ref})`);
     }
 
     if (category && typeof category === "string") {
-      filters.push("category = @category");
-      params.category = category;
+      filters.push(`category = ${pushParam(category)}`);
     }
 
     if (source && typeof source === "string") {
-      filters.push("source = @source");
-      params.source = source;
+      filters.push(`source = ${pushParam(source)}`);
     }
 
     if (tag && typeof tag === "string") {
-      filters.push("tags LIKE @tag");
-      params.tag = `%"${tag}"%`;
+      filters.push(`tags @> ${pushParam(JSON.stringify([tag]))}::jsonb`);
     }
 
     const where = filters.length > 0 ? `WHERE ${filters.join(" AND ")}` : "";
     const limitValue = parseLimit(typeof limit === "string" ? limit : undefined, 50);
     const offsetValue = parseLimit(typeof offset === "string" ? offset : undefined, 0);
 
-    const stmt = db.prepare(`
+    const query = `
       SELECT id, title, url, category, summary, tags, source, fetched_at
       FROM records
       ${where}
       ORDER BY fetched_at DESC
-      LIMIT @limit OFFSET @offset
-    `);
+      LIMIT ${pushParam(limitValue)} OFFSET ${pushParam(offsetValue)}
+    `;
 
-    const rows = stmt.all({ ...params, limit: limitValue, offset: offsetValue });
-
-    const records = rows.map((row: any) => ({
-      ...row,
-      tags: JSON.parse(row.tags)
-    }));
+    const result = await db.query(query, params);
 
     res.json({
-      count: records.length,
-      records
+      count: result.rows.length,
+      records: result.rows
     });
   });
 
-  app.get("/records/:id", (req, res) => {
-    const stmt = db.prepare(`
+  app.get("/records/:id", async (req, res) => {
+    const query = `
       SELECT id, title, url, category, summary, tags, source, fetched_at
       FROM records
-      WHERE id = @id
+      WHERE id = $1
       LIMIT 1
-    `);
-    const row = stmt.get({ id: req.params.id });
-    if (!row) {
+    `;
+    const result = await db.query(query, [req.params.id]);
+    if (result.rows.length === 0) {
       return res.status(404).json({ error: "Not found" });
     }
-    const record = {
-      ...row,
-      tags: JSON.parse(row.tags)
-    };
-    return res.json(record);
+    return res.json(result.rows[0]);
   });
 
   return app;

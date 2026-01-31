@@ -6,6 +6,10 @@ const start = () => {
     console.error("Missing API_KEY in environment");
     process.exit(1);
   }
+  if (!config.dbUrl) {
+    console.error("Missing DATABASE_URL in environment");
+    process.exit(1);
+  }
 
   const app = createApp();
   app.listen(config.port, () => {

@@ -1,7 +1,7 @@
 import crypto from "crypto";
 import { URL } from "url";
 import { config } from "../shared/config.js";
-import { openDb } from "../shared/db.js";
+import { ensureSchema, getPool } from "../shared/db.js";
 import type { NormalizedRecord } from "../shared/record.js";
 
 const parseArgs = (argv: string[]) => {
@@ -136,15 +136,17 @@ const run = async () => {
   console.log(`Parsed ${records.length} records`);
 
   if (dryRun) {
-    console.log(`Dry-run: would upsert ${records.length} records into ${config.dbPath}`);
+    console.log(`Dry-run: would upsert ${records.length} records into DATABASE_URL`);
     return;
   }
 
-  const db = openDb(config.dbPath);
-  const stmt = db.prepare(`
+  await ensureSchema(config.dbUrl);
+  const db = getPool(config.dbUrl);
+
+  const query = `
     INSERT INTO records (id, title, url, category, summary, tags, source, fetched_at)
-    VALUES (@id, @title, @url, @category, @summary, @tags, @source, @fetched_at)
-    ON CONFLICT(id) DO UPDATE SET
+    VALUES ($1, $2, $3, $4, $5, $6::jsonb, $7, $8)
+    ON CONFLICT (id) DO UPDATE SET
       title=excluded.title,
       url=excluded.url,
       category=excluded.category,
@@ -152,21 +154,22 @@ const run = async () => {
       tags=excluded.tags,
       source=excluded.source,
       fetched_at=excluded.fetched_at
-  `);
+  `;
 
-  const toDb = records.map((record) => ({
-    ...record,
-    tags: JSON.stringify(record.tags)
-  }));
+  for (const record of records) {
+    await db.query(query, [
+      record.id,
+      record.title,
+      record.url,
+      record.category,
+      record.summary,
+      JSON.stringify(record.tags),
+      record.source,
+      record.fetched_at
+    ]);
+  }
 
-  const transaction = db.transaction((rows: typeof toDb) => {
-    for (const row of rows) stmt.run(row);
-  });
-
-  transaction(toDb);
-  db.close();
-
-  console.log(`Upserted ${records.length} records into ${config.dbPath}`);
+  console.log(`Upserted ${records.length} records into DATABASE_URL`);
 };
 
 run().catch((err) => {

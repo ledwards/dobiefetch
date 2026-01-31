@@ -3,6 +3,11 @@ set -euo pipefail
 
 cd "$(dirname "$0")/.."
 
+if [[ -z "${DATABASE_URL:-}" ]]; then
+  echo "DATABASE_URL is required to run smoke test" >&2
+  exit 1
+fi
+
 npm run build
 
 node dist/collector/index.js --dry-run --limit=5
