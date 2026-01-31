@@ -10,6 +10,7 @@
     "build": "tsc",
     "start": "node dist/src/server/index.js",
     "dev": "node --watch dist/src/server/index.js",
+    "vercel-build": "npm run build && DOBIE_ENV=prod npm run migrate",
     "pre-migrate": "npm run build",
     "migrate": "node dist/src/migrate.js",
     "migrate:dev": "DOBIE_ENV=dev npm run migrate",

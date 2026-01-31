@@ -20,6 +20,7 @@ Smoke checks: `docs/smoke.md`
 
 - Apply schema locally: `npm run migrate` or `npm run migrate:dev`
 - Apply schema using prod creds: `npm run migrate:prod` (uses `.env.prod`)
+- Deploys run `npm run vercel-build`, which applies migrations with prod creds.
 
 ## Scraper
 

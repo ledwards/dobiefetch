@@ -33,6 +33,10 @@ const getSslConfig = (dbUrl: string): pg.PoolConfig["ssl"] | undefined => {
   if (!sslMode && isSupabaseUrl(dbUrl)) {
     sslMode = "require";
   }
+
+  if (!sslModeEnv && sslMode === "verify-full" && isSupabaseUrl(dbUrl)) {
+    sslMode = "require";
+  }
   if (!sslMode) return undefined;
   if (sslMode === "disable") return false;
   if (sslMode === "verify-full") return { rejectUnauthorized: true };
