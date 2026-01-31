@@ -21,6 +21,7 @@ const isSupabaseUrl = (dbUrl: string) => {
 
 const getSslConfig = (dbUrl: string): pg.PoolConfig["ssl"] | undefined => {
   const sslModeEnv = process.env.DATABASE_SSLMODE ?? process.env.PGSSLMODE ?? "";
+  const strictSsl = process.env.DATABASE_SSLMODE_STRICT === "true";
   let sslMode = sslModeEnv;
 
   try {
@@ -34,8 +35,12 @@ const getSslConfig = (dbUrl: string): pg.PoolConfig["ssl"] | undefined => {
     sslMode = "require";
   }
 
-  if (!sslModeEnv && sslMode === "verify-full" && isSupabaseUrl(dbUrl)) {
-    sslMode = "require";
+  if (isSupabaseUrl(dbUrl) && !strictSsl) {
+    if (!sslMode) {
+      sslMode = "require";
+    } else if (sslMode === "verify-full" || sslMode === "verify-ca" || sslMode === "prefer") {
+      sslMode = "require";
+    }
   }
   if (!sslMode) return undefined;
   if (sslMode === "disable") return false;
