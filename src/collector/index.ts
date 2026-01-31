@@ -8,6 +8,7 @@ type SearchResult = {
   animalId: string;
   clientId: string;
   detailUrl: string;
+  coverImagePath?: string | null;
 };
 
 type RunOptions = {
@@ -138,6 +139,25 @@ const extractSearchResults = (html: string, baseUrl: URL): SearchResult[] => {
   return Array.from(results.values());
 };
 
+const extractSearchResultsFromApi = (payload: Record<string, unknown>, baseUrl: URL): SearchResult[] => {
+  const animals = Array.isArray(payload.animal) ? payload.animal : [];
+  const results: SearchResult[] = [];
+  for (const item of animals) {
+    if (!item || typeof item !== "object") continue;
+    const animalId = toStringOrNull((item as Record<string, unknown>).animalId);
+    const clientId = toStringOrNull((item as Record<string, unknown>).clientId);
+    if (!animalId || !clientId) continue;
+    const detailUrl = new URL(`/pet-adoption/dogs/${animalId}/${clientId}`, baseUrl).toString();
+    results.push({
+      animalId,
+      clientId,
+      detailUrl,
+      coverImagePath: toStringOrNull((item as Record<string, unknown>).coverImagePath)
+    });
+  }
+  return results;
+};
+
 const fetchDetailPayload = async (animalId: string, clientId: string): Promise<PetPlacePayload> => {
   const apiUrl = `https://api.petplace.com/animal/${animalId}/client/${clientId}`;
   const response = await fetch(apiUrl, {
@@ -152,7 +172,7 @@ const fetchDetailPayload = async (animalId: string, clientId: string): Promise<P
   return (await response.json()) as PetPlacePayload;
 };
 
-const normalizeDog = (payload: PetPlacePayload, source: string) => {
+const normalizeDog = (payload: PetPlacePayload, source: string, coverImagePath?: string | null) => {
   const pp = payload.ppRequired?.[0] ?? {};
   const detail = payload.animalDetail?.[0] ?? {};
 
@@ -219,7 +239,9 @@ const normalizeDog = (payload: PetPlacePayload, source: string) => {
     ingested_at: ingestedAt
   };
 
-  const photos: PhotoRecord[] = (payload.imageURL ?? []).map((url, index) => ({
+  const photoUrls = payload.imageURL ?? [];
+  const normalizedCover = coverImagePath && !photoUrls.includes(coverImagePath) ? [coverImagePath] : [];
+  const photos: PhotoRecord[] = [...normalizedCover, ...photoUrls].map((url, index) => ({
     id: hashId(`${dogId}:${url}`),
     dog_id: dogId,
     url,
@@ -393,8 +415,14 @@ const run = async () => {
     throw new Error(`Search fetch failed (${response.status})`);
   }
 
-  const html = await response.text();
-  const results = extractSearchResults(html, searchUrl);
+  let results: SearchResult[] = [];
+  if (searchUrl.hostname === "api.petplace.com" && searchUrl.pathname.startsWith("/animal")) {
+    const payload = (await response.json()) as Record<string, unknown>;
+    results = extractSearchResultsFromApi(payload, searchUrl);
+  } else {
+    const html = await response.text();
+    results = extractSearchResults(html, searchUrl);
+  }
   const sliced = results.slice(0, options.limit);
 
   console.log(`Loaded search URL=${searchUrl.toString()}`);
@@ -428,7 +456,7 @@ const run = async () => {
   for (const result of sliced) {
     try {
       const payload = await fetchDetailPayload(result.animalId, result.clientId);
-      const normalized = normalizeDog(payload, "petplace");
+      const normalized = normalizeDog(payload, "petplace", result.coverImagePath ?? null);
 
       await db.query("BEGIN");
       const shelterId = await upsertShelter(db, normalized.shelter);

@@ -22,6 +22,8 @@ After this change, a user can run the scraper to collect PetPlace adoption data 
 
 - Observation: PetPlace dog detail pages are mostly empty HTML shells; real data comes from `https://api.petplace.com/animal/{AnimalId}/client/{ClientId}`.
   Evidence: Provided JSON payload includes `ppRequired`, `animalDetail`, and `imageURL` fields.
+- Observation: PetPlace search results are client-rendered and call `https://api.petplace.com/animal` to return `animalId` and `clientId` pairs.
+  Evidence: Browser network response returns JSON with `animal` array and `totalCount`.
 
 ## Decision Log
 
@@ -30,7 +32,11 @@ After this change, a user can run the scraper to collect PetPlace adoption data 
   Date/Author: 2026-01-31 / Codex.
 
 - Decision: Extract listing IDs from search HTML using a URL regex for `/pet-adoption/dogs/{AnimalId}/{ClientId}`.
-  Rationale: No extra dependencies required, and the URL pattern is stable in search results.
+  Rationale: No extra dependencies required, and the URL pattern is stable when HTML contains listings.
+  Date/Author: 2026-01-31 / Codex.
+
+- Decision: Support the PetPlace search API (`https://api.petplace.com/animal`) when HTML listings are client-rendered.
+  Rationale: The HTML search page can be empty while the API returns all listings; this ensures scraping still works.
   Date/Author: 2026-01-31 / Codex.
 
 - Decision: Store the full raw payload alongside normalized columns.
@@ -66,6 +72,7 @@ Second, update shared TypeScript types in `src/shared/record.ts` to represent no
 Third, update the scraper in `src/collector/index.ts` to:
 - Build the search URL from `TARGET_URL` or `PETPLACE_SEARCH_URL` and env defaults.
 - Fetch the search HTML and extract listing IDs.
+- If the search URL points at `api.petplace.com/animal`, parse the JSON response and extract listing IDs from the `animal` array.
 - Fetch the detail JSON for each listing.
 - Normalize fields into dog, shelter, and photos tables.
 - Upsert by `(source, source_animal_id, client_id)` for idempotence.
