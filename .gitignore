@@ -1,6 +1,7 @@
 node_modules/
 dist/
 .env
+.env.prod
 /data/records.sqlite
 /data/records.sqlite-journal
 /data/records.sqlite-wal

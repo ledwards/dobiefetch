@@ -9,8 +9,14 @@ Smoke checks: `docs/smoke.md`
 
 1. Install deps: `npm install`
 2. Build: `npm run build`
-3. Run API: `API_KEY=dev DATABASE_URL=postgres://... npm start`
+3. Create `.env.local` with dev creds (used by default)
+4. Run API: `npm start`
 
 ## Deploys
 
 - `git push` to `main` deploys to Vercel automatically.
+
+## Migrations
+
+- Apply schema locally: `npm run migrate`
+- Apply schema using prod creds: `DOBIE_ENV=prod npm run migrate` (uses `.env.prod`)

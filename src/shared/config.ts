@@ -1,6 +1,14 @@
+import fs from "fs";
+import path from "path";
 import dotenv from "dotenv";
 
-dotenv.config();
+const isProdEnv = process.env.DOBIE_ENV === "prod" || process.env.NODE_ENV === "production";
+const envFile = isProdEnv ? ".env.prod" : ".env.local";
+const envPath = path.resolve(process.cwd(), envFile);
+
+if (fs.existsSync(envPath)) {
+  dotenv.config({ path: envPath });
+}
 
 const requiredEnv = (key: string): string => {
   const value = process.env[key];

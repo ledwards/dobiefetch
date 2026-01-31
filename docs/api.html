@@ -85,9 +85,11 @@ X-API-Key: your-secret</pre>
       <li><code>src/index.ts</code> is the Express entrypoint for Vercel.</li>
       <li><code>vercel.json</code> uses the Vercel v2 format (no custom routes).</li>
       <li><code>git push</code> to <code>main</code> deploys to Vercel automatically.</li>
+      <li>Local dev reads <code>.env.local</code>; local prod reads <code>.env.prod</code> when <code>DOBIE_ENV=prod</code> is set.</li>
       <li>Set <code>API_KEY</code>, <code>TARGET_URL</code>, and a database URL in Vercel environment variables.</li>
       <li>If using Supabase + Vercel integration, the API reads <code>POSTGRES_URL</code> or <code>POSTGRES_URL_NON_POOLING</code>.</li>
       <li>If not using the integration, set <code>DATABASE_URL</code> manually.</li>
+      <li>Run <code>npm run migrate</code> with the same env vars to apply schema changes.</li>
     </ul>
   </section>
 </body>
