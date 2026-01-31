@@ -12,8 +12,12 @@
     "dev": "node --watch dist/src/server/index.js",
     "pre-migrate": "npm run build",
     "migrate": "node dist/src/migrate.js",
+    "migrate:dev": "DOBIE_ENV=dev npm run migrate",
+    "migrate:prod": "DOBIE_ENV=prod npm run migrate",
     "pre-scrape": "npm run build",
     "scrape": "node dist/src/collector/index.js",
+    "scrape:dev": "DOBIE_ENV=dev npm run scrape",
+    "scrape:prod": "DOBIE_ENV=prod npm run scrape",
     "test": "node --test"
   },
   "dependencies": {

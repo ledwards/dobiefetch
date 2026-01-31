@@ -18,5 +18,10 @@ Smoke checks: `docs/smoke.md`
 
 ## Migrations
 
-- Apply schema locally: `npm run migrate`
-- Apply schema using prod creds: `DOBIE_ENV=prod npm run migrate` (uses `.env.prod`)
+- Apply schema locally: `npm run migrate` or `npm run migrate:dev`
+- Apply schema using prod creds: `npm run migrate:prod` (uses `.env.prod`)
+
+## Scraper
+
+- Dev creds: `npm run scrape:dev`
+- Prod creds: `npm run scrape:prod`

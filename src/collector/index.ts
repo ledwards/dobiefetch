@@ -69,7 +69,7 @@ const categoryFromUrl = (url: URL): string | null => {
 
 const run = async () => {
   if (!config.targetUrl) {
-    throw new Error("TARGET_URL is required in .env");
+    throw new Error("TARGET_URL is required in .env.dev (or .env.prod with DOBIE_ENV=prod)");
   }
 
   const { dryRun, limit, delayMs } = parseArgs(process.argv.slice(2));
