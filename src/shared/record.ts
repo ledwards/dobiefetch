@@ -72,7 +72,7 @@ export type PhotoRecord = {
   ingested_at: string;
 };
 
-export type PetPlacePayload = {
+export type SourcePayload = {
   imageURL?: string[];
   ppRequired?: Array<Record<string, unknown>>;
   animalDetail?: Array<Record<string, unknown>>;

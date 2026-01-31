@@ -33,4 +33,4 @@ Environment variables for search:
 - `COLLECTOR_TARGET_ZIPS` (default: CA zip list; comma-separated)
 - `COLLECTOR_TARGET_RADIUS` (default: `100`)
 - `COLLECTOR_TARGET_START_INDEX` (default: `0`)
-- `COLLECTOR_TARGET_SEARCH_URL` (optional full override; can be a `https://api.petplace.com/animal?...` URL)
+- `COLLECTOR_TARGET_SEARCH_URL` (optional full override; can be a `https://api.source.example/animal` URL)

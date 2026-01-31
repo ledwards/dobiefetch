@@ -2,7 +2,7 @@ import crypto from "crypto";
 import { URL } from "url";
 import { config, envInfo } from "../shared/config.js";
 import { ensureSchema, getPool } from "../shared/db.js";
-import type { DogRecord, PhotoRecord, PetPlacePayload, ShelterRecord } from "../shared/record.js";
+import type { DogRecord, PhotoRecord, SourcePayload, ShelterRecord } from "../shared/record.js";
 
 type SearchResult = {
   animalId: string;
@@ -143,11 +143,19 @@ const inferStatus = (value: string | null) => {
   return /available for adoption/i.test(value) ? "available" : null;
 };
 
+const getBaseUrl = () => {
+  return process.env.COLLECTOR_TARGET_BASE_URL || config.targetUrl || "https://source.example";
+};
+
+const getApiBaseUrl = () => {
+  return process.env.COLLECTOR_TARGET_API_URL || "https://api.source.example";
+};
+
 const buildSearchUrl = (options: RunOptions) => {
   if (options.searchUrlOverride) {
     return new URL(options.searchUrlOverride);
   }
-  const base = config.targetUrl || "https://www.petplace.com";
+  const base = getBaseUrl();
   const url = new URL("/pet-adoption/search", base);
   url.searchParams.set("milesRadius", options.radius);
   url.searchParams.set("filterGender", "");
@@ -209,13 +217,14 @@ const extractSearchResultsFromApi = (payload: Record<string, unknown>, baseUrl: 
 };
 
 const fetchSearchResultsFromApi = async (options: RunOptions, zip: string) => {
-  const response = await fetch("https://api.petplace.com/animal", {
+  const apiBase = getApiBaseUrl();
+  const response = await fetch(`${apiBase}/animal`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
       Accept: "application/json",
-      Origin: "https://www.petplace.com",
-      Referer: "https://www.petplace.com/",
+      Origin: getBaseUrl(),
+      Referer: `${getBaseUrl()}/`,
       "User-Agent": "dobiefetch/0.1 (+https://example.local)"
     },
     body: JSON.stringify({
@@ -240,11 +249,12 @@ const fetchSearchResultsFromApi = async (options: RunOptions, zip: string) => {
   }
 
   const payload = (await response.json()) as Record<string, unknown>;
-  return extractSearchResultsFromApi(payload, new URL("https://www.petplace.com"));
+  return extractSearchResultsFromApi(payload, new URL(getBaseUrl()));
 };
 
-const fetchDetailPayload = async (animalId: string, clientId: string): Promise<PetPlacePayload> => {
-  const apiUrl = `https://api.petplace.com/animal/${animalId}/client/${clientId}`;
+const fetchDetailPayload = async (animalId: string, clientId: string): Promise<SourcePayload> => {
+  const apiBase = getApiBaseUrl();
+  const apiUrl = `${apiBase}/animal/${animalId}/client/${clientId}`;
   const response = await fetch(apiUrl, {
     headers: {
       "User-Agent": "dobiefetch/0.1 (+https://example.local)",
@@ -254,10 +264,10 @@ const fetchDetailPayload = async (animalId: string, clientId: string): Promise<P
   if (!response.ok) {
     throw new Error(`Detail fetch failed (${response.status}) for ${animalId}/${clientId}`);
   }
-  return (await response.json()) as PetPlacePayload;
+  return (await response.json()) as SourcePayload;
 };
 
-const normalizeDog = (payload: PetPlacePayload, source: string, searchResult?: SearchResult | null) => {
+const normalizeDog = (payload: SourcePayload, source: string, searchResult?: SearchResult | null) => {
   const pp = payload.ppRequired?.[0] ?? {};
   const detail = payload.animalDetail?.[0] ?? {};
 
@@ -266,8 +276,8 @@ const normalizeDog = (payload: PetPlacePayload, source: string, searchResult?: S
   const fullName = toStringOrNull(pp["Pet Name"]);
   const name = fullName ? fullName.replace(/\s*\([^)]*\)\s*$/, "").trim() : "";
 
-  const listingUrl = `https://www.petplace.com/pet-adoption/dogs/${sourceAnimalId}/${clientId}`;
-  const sourceApiUrl = `https://api.petplace.com/animal/${sourceAnimalId}/client/${clientId}`;
+  const listingUrl = `${getBaseUrl()}/pet-adoption/dogs/${sourceAnimalId}/${clientId}`;
+  const sourceApiUrl = `${getApiBaseUrl()}/animal/${sourceAnimalId}/client/${clientId}`;
   const ingestedAt = new Date().toISOString();
 
   const shelterId = hashId(`${source}:${clientId}`);
@@ -542,7 +552,8 @@ const run = async () => {
   const searchUrl = buildSearchUrl(options);
 
   let results: SearchResult[] = [];
-  if (options.searchUrlOverride && searchUrl.hostname === "api.petplace.com") {
+  const apiBaseHost = new URL(getApiBaseUrl()).hostname;
+  if (options.searchUrlOverride && searchUrl.hostname === apiBaseHost) {
     const response = await fetch(searchUrl.toString(), {
       headers: {
         "User-Agent": "dobiefetch/0.1 (+https://example.local)"
@@ -572,7 +583,7 @@ const run = async () => {
 
   if (deduped.length === 0) {
     throw new Error(
-      "No listings found. The PetPlace API returned no animals for the search filters. " +
+      "No listings found. The source API returned no animals for the search filters. " +
         "Verify COLLECTOR_TARGET_ZIP, COLLECTOR_TARGET_RADIUS, and COLLECTOR_TARGET_BREED."
     );
   }
@@ -597,7 +608,7 @@ const run = async () => {
   for (const result of sliced) {
     try {
       const payload = await fetchDetailPayload(result.animalId, result.clientId);
-      const normalized = normalizeDog(payload, "petplace", result);
+      const normalized = normalizeDog(payload, "source", result);
 
       await db.query("BEGIN");
       const shelterId = await upsertShelter(db, normalized.shelter);

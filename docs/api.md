@@ -2,7 +2,7 @@
 
 ## Overview
 
-- Purpose: Provide read-only access to dog adoption listings scraped from PetPlace.
+- Purpose: Provide read-only access to dog adoption listings scraped from the source platform.
 - Base URL: `https://dobiefetch.vercel.app` (local: `http://localhost:3000`)
 - Auth: Shared secret via `X-API-Key` header or `Authorization: Bearer <API_KEY>`.
 - Content type: JSON.
@@ -131,7 +131,7 @@ Response:
   "dogs": [
     {
       "id": "...",
-      "source": "petplace",
+      "source": "source",
       "source_animal_id": "A1042472",
       "client_id": "CCST",
       "name": "MINDY",
@@ -161,8 +161,8 @@ Response:
       "lon": -122.154813,
       "filter_breed_group": "POINTER",
       "client_sort": 1,
-      "listing_url": "https://www.petplace.com/pet-adoption/dogs/A1042472/CCST",
-      "source_api_url": "https://api.petplace.com/animal/A1042472/client/CCST",
+      "listing_url": "https://www.source.example/pet-adoption/dogs/A1042472/CCST",
+      "source_api_url": "https://api.source.example/animal/A1042472/client/CCST",
       "data_updated_note": "...",
       "filters": {
         "filter_age": "A",

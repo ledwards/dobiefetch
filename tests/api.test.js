@@ -32,7 +32,7 @@ if (!dbUrl) {
        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14)`,
       [
         shelterId,
-        "petplace",
+        "source",
         "CCST",
         "Contra Costa County Animal Services",
         "4800 Imhoff Place",
@@ -68,7 +68,7 @@ if (!dbUrl) {
       )`,
       [
         dogId,
-        "petplace",
+        "source",
         "A1042472",
         "CCST",
         "Mindy",
@@ -86,8 +86,8 @@ if (!dbUrl) {
         68,
         "available",
         shelterId,
-        "https://www.petplace.com/pet-adoption/dogs/A1042472/CCST",
-        "https://api.petplace.com/animal/A1042472/client/CCST",
+        "https://www.source.example/pet-adoption/dogs/A1042472/CCST",
+        "https://api.source.example/animal/A1042472/client/CCST",
         "Updated",
         "A",
         "F",
@@ -110,7 +110,7 @@ if (!dbUrl) {
         "https://example.com/photo.png",
         true,
         0,
-        "petplace",
+        "source",
         new Date().toISOString()
       ]
     );
