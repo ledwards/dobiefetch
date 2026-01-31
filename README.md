@@ -28,9 +28,9 @@ Smoke checks: `docs/smoke.md`
 - Prod creds: `npm run scrape:prod`
 
 Environment variables for search:
-- `PETPLACE_BREED` (default: `DOBERMAN PINSCH`)
-- `PETPLACE_ZIP` (default: `94110`)
-- `PETPLACE_ZIPS` (default: CA zip list; comma-separated)
-- `PETPLACE_RADIUS` (default: `100`)
-- `PETPLACE_START_INDEX` (default: `0`)
-- `PETPLACE_SEARCH_URL` (optional full override; can be a `https://api.petplace.com/animal?...` URL)
+- `COLLECTOR_TARGET_BREED` (default: `DOBERMAN PINSCH`)
+- `COLLECTOR_TARGET_ZIP` (default: `94110`)
+- `COLLECTOR_TARGET_ZIPS` (default: CA zip list; comma-separated)
+- `COLLECTOR_TARGET_RADIUS` (default: `100`)
+- `COLLECTOR_TARGET_START_INDEX` (default: `0`)
+- `COLLECTOR_TARGET_SEARCH_URL` (optional full override; can be a `https://api.petplace.com/animal?...` URL)

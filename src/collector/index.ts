@@ -72,7 +72,7 @@ const parseArgs = (argv: string[]): RunOptions => {
     }
   }
 
-  const zipsRaw = (process.env.PETPLACE_ZIPS || "").trim();
+  const zipsRaw = (process.env.COLLECTOR_TARGET_ZIPS || "").trim();
   const zips = zipsRaw
     ? zipsRaw.split(",").map((item) => item.trim()).filter(Boolean)
     : [
@@ -88,11 +88,11 @@ const parseArgs = (argv: string[]): RunOptions => {
         "92262",
         "92101"
       ];
-  const zip = (args.get("zip") as string) || process.env.PETPLACE_ZIP || zips[0] || "94110";
-  const breed = (args.get("breed") as string) || process.env.PETPLACE_BREED || "DOBERMAN PINSCH";
-  const radius = (args.get("radius") as string) || process.env.PETPLACE_RADIUS || "100";
-  const searchUrlOverride = (args.get("search-url") as string) || process.env.PETPLACE_SEARCH_URL;
-  const startIndex = Number(args.get("start-index") ?? process.env.PETPLACE_START_INDEX ?? 0);
+  const zip = (args.get("zip") as string) || process.env.COLLECTOR_TARGET_ZIP || zips[0] || "94110";
+  const breed = (args.get("breed") as string) || process.env.COLLECTOR_TARGET_BREED || "DOBERMAN PINSCH";
+  const radius = (args.get("radius") as string) || process.env.COLLECTOR_TARGET_RADIUS || "100";
+  const searchUrlOverride = (args.get("search-url") as string) || process.env.COLLECTOR_TARGET_SEARCH_URL;
+  const startIndex = Number(args.get("start-index") ?? process.env.COLLECTOR_TARGET_START_INDEX ?? 0);
 
   return {
     dryRun: Boolean(args.get("dry-run")),
@@ -531,11 +531,11 @@ const replacePhotos = async (db: ReturnType<typeof getPool>, dogId: string, phot
 };
 
 const run = async () => {
-  if (!config.targetUrl && !process.env.PETPLACE_SEARCH_URL) {
+  if (!config.targetUrl && !process.env.COLLECTOR_TARGET_SEARCH_URL) {
     const details = envInfo.envFileExists
       ? `Check ${envInfo.envFile}.`
       : `Expected ${envInfo.envFile} (not found).`;
-    throw new Error(`TARGET_URL is required (or set PETPLACE_SEARCH_URL). ${details}`);
+    throw new Error(`TARGET_URL is required (or set COLLECTOR_TARGET_SEARCH_URL). ${details}`);
   }
 
   const options = parseArgs(process.argv.slice(2));
@@ -573,7 +573,7 @@ const run = async () => {
   if (deduped.length === 0) {
     throw new Error(
       "No listings found. The PetPlace API returned no animals for the search filters. " +
-        "Verify PETPLACE_ZIP, PETPLACE_RADIUS, and PETPLACE_BREED."
+        "Verify COLLECTOR_TARGET_ZIP, COLLECTOR_TARGET_RADIUS, and COLLECTOR_TARGET_BREED."
     );
   }
 
