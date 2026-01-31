@@ -18,6 +18,7 @@ type RunOptions = {
   zip: string;
   breed: string;
   radius: string;
+  startIndex: number;
   searchUrlOverride?: string;
 };
 
@@ -48,6 +49,10 @@ const parseArgs = (argv: string[]): RunOptions => {
       args.set("radius", arg.split("=")[1]);
       continue;
     }
+    if (arg.startsWith("--start-index=")) {
+      args.set("start-index", arg.split("=")[1]);
+      continue;
+    }
     if (arg.startsWith("--search-url=")) {
       args.set("search-url", arg.split("=")[1]);
       continue;
@@ -58,6 +63,7 @@ const parseArgs = (argv: string[]): RunOptions => {
   const breed = (args.get("breed") as string) || process.env.PETPLACE_BREED || "DOBERMAN PINSCH";
   const radius = (args.get("radius") as string) || process.env.PETPLACE_RADIUS || "100";
   const searchUrlOverride = (args.get("search-url") as string) || process.env.PETPLACE_SEARCH_URL;
+  const startIndex = Number(args.get("start-index") ?? process.env.PETPLACE_START_INDEX ?? 0);
 
   return {
     dryRun: Boolean(args.get("dry-run")),
@@ -66,6 +72,7 @@ const parseArgs = (argv: string[]): RunOptions => {
     zip,
     breed,
     radius,
+    startIndex,
     searchUrlOverride
   };
 };
@@ -156,6 +163,41 @@ const extractSearchResultsFromApi = (payload: Record<string, unknown>, baseUrl: 
     });
   }
   return results;
+};
+
+const fetchSearchResultsFromApi = async (options: RunOptions) => {
+  const response = await fetch("https://api.petplace.com/animal", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Accept: "application/json",
+      Origin: "https://www.petplace.com",
+      Referer: "https://www.petplace.com/",
+      "User-Agent": "dobiefetch/0.1 (+https://example.local)"
+    },
+    body: JSON.stringify({
+      locationInformation: {
+        clientId: null,
+        zipPostal: options.zip,
+        milesRadius: options.radius
+      },
+      animalFilters: {
+        startIndex: options.startIndex,
+        filterAnimalType: "Dog",
+        filterBreed: [options.breed],
+        filterGender: "",
+        filterAge: null,
+        filterSize: null
+      }
+    })
+  });
+
+  if (!response.ok) {
+    throw new Error(`Search API fetch failed (${response.status})`);
+  }
+
+  const payload = (await response.json()) as Record<string, unknown>;
+  return extractSearchResultsFromApi(payload, new URL("https://www.petplace.com"));
 };
 
 const fetchDetailPayload = async (animalId: string, clientId: string): Promise<PetPlacePayload> => {
@@ -422,6 +464,9 @@ const run = async () => {
   } else {
     const html = await response.text();
     results = extractSearchResults(html, searchUrl);
+    if (results.length === 0) {
+      results = await fetchSearchResultsFromApi(options);
+    }
   }
   const sliced = results.slice(0, options.limit);
 
@@ -430,9 +475,8 @@ const run = async () => {
 
   if (results.length === 0) {
     throw new Error(
-      "No listings found. The search results page may be client-rendered or blocked. " +
-        "Try setting PETPLACE_SEARCH_URL to a full URL that returns HTML with listing links, " +
-        "or open the search page in a browser to confirm it contains /pet-adoption/dogs/... links."
+      "No listings found. The PetPlace API returned no animals for the search filters. " +
+        "Verify PETPLACE_ZIP, PETPLACE_RADIUS, and PETPLACE_BREED."
     );
   }
 

@@ -31,4 +31,5 @@ Environment variables for search:
 - `PETPLACE_BREED` (default: `DOBERMAN PINSCH`)
 - `PETPLACE_ZIP` (default: `94110`)
 - `PETPLACE_RADIUS` (default: `100`)
+- `PETPLACE_START_INDEX` (default: `0`)
 - `PETPLACE_SEARCH_URL` (optional full override; can be a `https://api.petplace.com/animal?...` URL)
