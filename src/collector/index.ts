@@ -167,7 +167,7 @@ const buildSearchUrl = (options: RunOptions) => {
   url.searchParams.set("filterAnimalType", "Dog");
   url.searchParams.set("filterBreed", options.breed);
   url.searchParams.set("filterShelter", "");
-  url.searchParams.set("zipPostal", options.zip);
+  url.searchParams.set("zipPostal", options.zips[0] || "");
   url.searchParams.set("filterSize", "");
   return url;
 };
