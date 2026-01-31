@@ -1,6 +1,6 @@
 import crypto from "crypto";
 import { URL } from "url";
-import { config } from "../shared/config.js";
+import { config, envInfo } from "../shared/config.js";
 import { ensureSchema, getPool } from "../shared/db.js";
 import type { NormalizedRecord } from "../shared/record.js";
 
@@ -69,7 +69,10 @@ const categoryFromUrl = (url: URL): string | null => {
 
 const run = async () => {
   if (!config.targetUrl) {
-    throw new Error("TARGET_URL is required in .env.dev (or .env.prod with DOBIE_ENV=prod)");
+    const details = envInfo.envFileExists
+      ? `Check ${envInfo.envFile}.`
+      : `Expected ${envInfo.envFile} (not found).`;
+    throw new Error(`TARGET_URL is required. ${details}`);
   }
 
   const { dryRun, limit, delayMs } = parseArgs(process.argv.slice(2));
