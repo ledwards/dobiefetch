@@ -1,0 +1,7 @@
+node_modules/
+dist/
+.env
+/data/records.sqlite
+/data/records.sqlite-journal
+/data/records.sqlite-wal
+/data/records.sqlite-shm

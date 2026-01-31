@@ -1,0 +1,91 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Dobiefetch API Documentation</title>
+  <style>
+    body { font-family: Georgia, serif; margin: 2rem; line-height: 1.5; color: #1e1e1e; }
+    h1, h2, h3 { font-family: "Trebuchet MS", sans-serif; }
+    code, pre { background: #f5f5f5; padding: 0.2rem 0.4rem; border-radius: 4px; }
+    pre { padding: 1rem; overflow-x: auto; }
+    section { margin-bottom: 2rem; }
+  </style>
+</head>
+<body>
+  <h1>Dobiefetch API Documentation</h1>
+
+  <section>
+    <h2>Overview</h2>
+    <p>This API provides read-only access to normalized records scraped from the target source.</p>
+    <ul>
+      <li>Base URL: <code>https://&lt;your-vercel-domain&gt;</code> (local: <code>http://localhost:3000</code>)</li>
+      <li>Auth: Shared secret via <code>X-API-Key</code> header or <code>Authorization: Bearer &lt;API_KEY&gt;</code></li>
+      <li>Content type: JSON</li>
+    </ul>
+  </section>
+
+  <section>
+    <h2>Authentication</h2>
+    <p>All endpoints except <code>/health</code> require authentication.</p>
+    <pre>GET /records
+X-API-Key: your-secret</pre>
+  </section>
+
+  <section>
+    <h2>Record Schema</h2>
+    <pre>{
+  "id": "string",
+  "title": "string",
+  "url": "string",
+  "category": "string|null",
+  "summary": "string|null",
+  "tags": ["string"],
+  "source": "string",
+  "fetched_at": "ISO-8601 timestamp"
+}</pre>
+  </section>
+
+  <section>
+    <h2>Endpoints</h2>
+
+    <h3>GET /health</h3>
+    <p>No auth required. Returns <code>200 OK</code> with body <code>OK</code>.</p>
+
+    <h3>GET /records</h3>
+    <p>List records with optional filters and search.</p>
+    <ul>
+      <li><code>q</code>: substring search across title, summary, url, and tags</li>
+      <li><code>category</code>: exact match</li>
+      <li><code>source</code>: exact match</li>
+      <li><code>tag</code>: exact match against tags array</li>
+      <li><code>limit</code>: number of records (default 50, max 200)</li>
+      <li><code>offset</code>: offset for pagination</li>
+    </ul>
+    <pre>GET /records?q=cat&amp;category=care&amp;limit=10
+X-API-Key: your-secret</pre>
+
+    <h3>GET /records/:id</h3>
+    <p>Fetch a single record by id.</p>
+    <pre>GET /records/abc123
+X-API-Key: your-secret</pre>
+  </section>
+
+  <section>
+    <h2>Error Responses</h2>
+    <ul>
+      <li><code>401 Unauthorized</code>: missing or incorrect API key</li>
+      <li><code>500 Internal Server Error</code>: missing configuration (e.g., API_KEY not set)</li>
+    </ul>
+  </section>
+
+  <section>
+    <h2>Deployment Notes (Vercel)</h2>
+    <ul>
+      <li><code>api/index.ts</code> exports the Express app for Vercel serverless runtime.</li>
+      <li><code>vercel.json</code> routes all requests to the API handler.</li>
+      <li>Set <code>API_KEY</code>, <code>DB_PATH</code>, and <code>TARGET_URL</code> in Vercel environment variables.</li>
+    </ul>
+  </section>
+</body>
+</html>
