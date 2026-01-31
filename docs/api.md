@@ -3,7 +3,7 @@
 ## Overview
 
 - Purpose: Provide read-only access to normalized records scraped from the target source.
-- Base URL: `https://<your-vercel-domain>` (local: `http://localhost:3000`)
+- Base URL: `https://dobiefetch.vercel.app` (local: `http://localhost:3000`)
 - Auth: Shared secret via `X-API-Key` header or `Authorization: Bearer <API_KEY>`.
 - Content type: JSON.
 
@@ -101,8 +101,8 @@ Responses:
 
 ## Deployment Notes (Vercel)
 
-- `api/index.ts` exports the Express app for Vercel serverless runtime.
-- `vercel.json` routes all requests to the API handler.
+- `src/index.ts` is the Express entrypoint for Vercel.
+- `vercel.json` uses the Vercel v2 format (no custom routes).
 - Set `API_KEY`, `TARGET_URL`, and a database URL in Vercel environment variables.
   - If using Supabase + Vercel integration, the code will use `POSTGRES_URL` or `POSTGRES_URL_NON_POOLING` automatically.
   - If not using the integration, set `DATABASE_URL` manually.

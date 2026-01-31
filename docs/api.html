@@ -19,7 +19,7 @@
     <h2>Overview</h2>
     <p>This API provides read-only access to normalized records scraped from the target source.</p>
     <ul>
-      <li>Base URL: <code>https://&lt;your-vercel-domain&gt;</code> (local: <code>http://localhost:3000</code>)</li>
+      <li>Base URL: <code>https://dobiefetch.vercel.app</code> (local: <code>http://localhost:3000</code>)</li>
       <li>Auth: Shared secret via <code>X-API-Key</code> header or <code>Authorization: Bearer &lt;API_KEY&gt;</code></li>
       <li>Content type: JSON</li>
     </ul>
@@ -82,8 +82,8 @@ X-API-Key: your-secret</pre>
   <section>
     <h2>Deployment Notes (Vercel)</h2>
     <ul>
-      <li><code>api/index.ts</code> exports the Express app for Vercel serverless runtime.</li>
-      <li><code>vercel.json</code> routes all requests to the API handler.</li>
+      <li><code>src/index.ts</code> is the Express entrypoint for Vercel.</li>
+      <li><code>vercel.json</code> uses the Vercel v2 format (no custom routes).</li>
       <li>Set <code>API_KEY</code>, <code>TARGET_URL</code>, and a database URL in Vercel environment variables.</li>
       <li>If using Supabase + Vercel integration, the API reads <code>POSTGRES_URL</code> or <code>POSTGRES_URL_NON_POOLING</code>.</li>
       <li>If not using the integration, set <code>DATABASE_URL</code> manually.</li>
