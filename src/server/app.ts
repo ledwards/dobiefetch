@@ -2,8 +2,21 @@ import express from "express";
 import { config } from "../shared/config.js";
 import { ensureSchema, getPool } from "../shared/db.js";
 
-await ensureSchema(config.dbUrl);
-const db = getPool(config.dbUrl);
+let dbPromise: Promise<ReturnType<typeof getPool>> | null = null;
+
+const getDb = async () => {
+  if (!dbPromise) {
+    const dbUrl = config.dbUrl;
+    if (!dbUrl) {
+      throw new Error("DATABASE_URL is required");
+    }
+    dbPromise = (async () => {
+      await ensureSchema(dbUrl);
+      return getPool(dbUrl);
+    })();
+  }
+  return dbPromise;
+};
 
 const getApiKey = (req: express.Request): string | null => {
   const headerKey = req.header("x-api-key");
@@ -47,37 +60,39 @@ export const createApp = () => {
   app.get("/records", async (req, res) => {
     const { q, category, source, tag, limit, offset } = req.query;
 
-    const filters: string[] = [];
-    const params: Array<string | number> = [];
+    try {
+      const db = await getDb();
+      const filters: string[] = [];
+      const params: Array<string | number> = [];
 
-    const pushParam = (value: string | number) => {
-      params.push(value);
-      return `$${params.length}`;
-    };
+      const pushParam = (value: string | number) => {
+        params.push(value);
+        return `$${params.length}`;
+      };
 
-    if (q && typeof q === "string") {
-      const token = `%${q}%`;
-      const ref = pushParam(token);
-      filters.push(`(title ILIKE ${ref} OR summary ILIKE ${ref} OR url ILIKE ${ref} OR tags::text ILIKE ${ref})`);
-    }
+      if (q && typeof q === "string") {
+        const token = `%${q}%`;
+        const ref = pushParam(token);
+        filters.push(`(title ILIKE ${ref} OR summary ILIKE ${ref} OR url ILIKE ${ref} OR tags::text ILIKE ${ref})`);
+      }
 
-    if (category && typeof category === "string") {
-      filters.push(`category = ${pushParam(category)}`);
-    }
+      if (category && typeof category === "string") {
+        filters.push(`category = ${pushParam(category)}`);
+      }
 
-    if (source && typeof source === "string") {
-      filters.push(`source = ${pushParam(source)}`);
-    }
+      if (source && typeof source === "string") {
+        filters.push(`source = ${pushParam(source)}`);
+      }
 
-    if (tag && typeof tag === "string") {
-      filters.push(`tags @> ${pushParam(JSON.stringify([tag]))}::jsonb`);
-    }
+      if (tag && typeof tag === "string") {
+        filters.push(`tags @> ${pushParam(JSON.stringify([tag]))}::jsonb`);
+      }
 
-    const where = filters.length > 0 ? `WHERE ${filters.join(" AND ")}` : "";
-    const limitValue = parseLimit(typeof limit === "string" ? limit : undefined, 50);
-    const offsetValue = parseLimit(typeof offset === "string" ? offset : undefined, 0);
+      const where = filters.length > 0 ? `WHERE ${filters.join(" AND ")}` : "";
+      const limitValue = parseLimit(typeof limit === "string" ? limit : undefined, 50);
+      const offsetValue = parseLimit(typeof offset === "string" ? offset : undefined, 0);
 
-    const query = `
+      const query = `
       SELECT id, title, url, category, summary, tags, source, fetched_at
       FROM records
       ${where}
@@ -85,26 +100,36 @@ export const createApp = () => {
       LIMIT ${pushParam(limitValue)} OFFSET ${pushParam(offsetValue)}
     `;
 
-    const result = await db.query(query, params);
+      const result = await db.query(query, params);
 
-    res.json({
-      count: result.rows.length,
-      records: result.rows
-    });
+      res.json({
+        count: result.rows.length,
+        records: result.rows
+      });
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "Database error";
+      res.status(500).json({ error: message });
+    }
   });
 
   app.get("/records/:id", async (req, res) => {
-    const query = `
+    try {
+      const db = await getDb();
+      const query = `
       SELECT id, title, url, category, summary, tags, source, fetched_at
       FROM records
       WHERE id = $1
       LIMIT 1
     `;
-    const result = await db.query(query, [req.params.id]);
-    if (result.rows.length === 0) {
-      return res.status(404).json({ error: "Not found" });
+      const result = await db.query(query, [req.params.id]);
+      if (result.rows.length === 0) {
+        return res.status(404).json({ error: "Not found" });
+      }
+      return res.json(result.rows[0]);
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "Database error";
+      return res.status(500).json({ error: message });
     }
-    return res.json(result.rows[0]);
   });
 
   return app;
