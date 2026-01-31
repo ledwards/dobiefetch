@@ -72,7 +72,6 @@ const parseArgs = (argv: string[]): RunOptions => {
     }
   }
 
-  const zip = (args.get("zip") as string) || process.env.PETPLACE_ZIP || "94110";
   const zipsRaw = (process.env.PETPLACE_ZIPS || "").trim();
   const zips = zipsRaw
     ? zipsRaw.split(",").map((item) => item.trim()).filter(Boolean)
@@ -89,6 +88,7 @@ const parseArgs = (argv: string[]): RunOptions => {
         "92262",
         "92101"
       ];
+  const zip = (args.get("zip") as string) || process.env.PETPLACE_ZIP || zips[0] || "94110";
   const breed = (args.get("breed") as string) || process.env.PETPLACE_BREED || "DOBERMAN PINSCH";
   const radius = (args.get("radius") as string) || process.env.PETPLACE_RADIUS || "100";
   const searchUrlOverride = (args.get("search-url") as string) || process.env.PETPLACE_SEARCH_URL;
@@ -566,7 +566,8 @@ const run = async () => {
   });
   const sliced = deduped.slice(0, options.limit);
 
-  console.log(`Loaded search URL=${searchUrl.toString()}`);
+  console.log(`Search mode=api`);
+  console.log(`Zip list=${options.zips.join(",")}`);
   console.log(`Found ${deduped.length} listings`);
 
   if (deduped.length === 0) {
