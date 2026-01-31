@@ -10,12 +10,32 @@ const __dirname = path.dirname(__filename);
 
 let pool: pg.Pool | null = null;
 
+const getSslConfig = (dbUrl: string): pg.PoolConfig["ssl"] | undefined => {
+  const sslModeEnv = process.env.DATABASE_SSLMODE ?? process.env.PGSSLMODE ?? "";
+  let sslMode = sslModeEnv;
+
+  try {
+    const url = new URL(dbUrl);
+    sslMode = sslMode || url.searchParams.get("sslmode") || "";
+  } catch {
+    // Ignore malformed URLs; fall back to env.
+  }
+
+  if (!sslMode) return undefined;
+  if (sslMode === "disable") return false;
+  if (sslMode === "verify-full") return { rejectUnauthorized: true };
+  return { rejectUnauthorized: false };
+};
+
 export const getPool = (dbUrl: string): pg.Pool => {
   if (!dbUrl) {
     throw new Error("DATABASE_URL is required");
   }
   if (!pool) {
-    pool = new Pool({ connectionString: dbUrl });
+    pool = new Pool({
+      connectionString: dbUrl,
+      ssl: getSslConfig(dbUrl)
+    });
   }
   return pool;
 };
