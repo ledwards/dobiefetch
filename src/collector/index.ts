@@ -151,6 +151,17 @@ const getApiBaseUrl = () => {
   return process.env.COLLECTOR_TARGET_API_URL || "https://api.source.example";
 };
 
+const getSourceName = () => {
+  const base = getBaseUrl();
+  try {
+    const host = new URL(base).hostname;
+    const trimmed = host.replace(/^www\./i, "").replace(/\.com$/i, "");
+    return trimmed.split(".")[0] || "source";
+  } catch {
+    return "source";
+  }
+};
+
 const buildSearchUrl = (options: RunOptions) => {
   if (options.searchUrlOverride) {
     return new URL(options.searchUrlOverride);
@@ -608,7 +619,7 @@ const run = async () => {
   for (const result of sliced) {
     try {
       const payload = await fetchDetailPayload(result.animalId, result.clientId);
-      const normalized = normalizeDog(payload, "source", result);
+      const normalized = normalizeDog(payload, getSourceName(), result);
 
       await db.query("BEGIN");
       const shelterId = await upsertShelter(db, normalized.shelter);
