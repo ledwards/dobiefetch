@@ -10,6 +10,15 @@ const __dirname = path.dirname(__filename);
 
 let pool: pg.Pool | null = null;
 
+const isSupabaseUrl = (dbUrl: string) => {
+  try {
+    const url = new URL(dbUrl);
+    return url.hostname.includes("supabase") || url.hostname.includes("pooler");
+  } catch {
+    return dbUrl.includes("supabase") || dbUrl.includes("pooler");
+  }
+};
+
 const getSslConfig = (dbUrl: string): pg.PoolConfig["ssl"] | undefined => {
   const sslModeEnv = process.env.DATABASE_SSLMODE ?? process.env.PGSSLMODE ?? "";
   let sslMode = sslModeEnv;
@@ -21,6 +30,9 @@ const getSslConfig = (dbUrl: string): pg.PoolConfig["ssl"] | undefined => {
     // Ignore malformed URLs; fall back to env.
   }
 
+  if (!sslMode && isSupabaseUrl(dbUrl)) {
+    sslMode = "require";
+  }
   if (!sslMode) return undefined;
   if (sslMode === "disable") return false;
   if (sslMode === "verify-full") return { rejectUnauthorized: true };
