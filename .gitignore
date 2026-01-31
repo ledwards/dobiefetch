@@ -8,3 +8,4 @@ dist/
 /data/records.sqlite-shm
 .vercel
 .env*.local
+.env.dev

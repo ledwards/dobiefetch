@@ -9,7 +9,7 @@ Smoke checks: `docs/smoke.md`
 
 1. Install deps: `npm install`
 2. Build: `npm run build`
-3. Create `.env.local` with dev creds (used by default)
+3. Create `.env.dev` with dev creds (used by default)
 4. Run API: `npm start`
 
 ## Deploys

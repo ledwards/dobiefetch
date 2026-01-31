@@ -104,7 +104,7 @@ Responses:
 - `src/index.ts` is the Express entrypoint for Vercel.
 - `vercel.json` uses the Vercel v2 format (no custom routes).
 - `git push` to `main` deploys to Vercel automatically.
-- Local dev reads `.env.local`; local prod reads `.env.prod` when `DOBIE_ENV=prod` is set.
+- Local dev reads `.env.dev`; local prod reads `.env.prod` when `DOBIE_ENV=prod` is set.
 - Set `API_KEY`, `TARGET_URL`, and a database URL in Vercel environment variables.
   - If using Supabase + Vercel integration, the code will use `POSTGRES_URL` or `POSTGRES_URL_NON_POOLING` automatically.
   - If not using the integration, set `DATABASE_URL` manually.

@@ -3,7 +3,7 @@ import path from "path";
 import dotenv from "dotenv";
 
 const isProdEnv = process.env.DOBIE_ENV === "prod" || process.env.NODE_ENV === "production";
-const envFile = isProdEnv ? ".env.prod" : ".env.local";
+const envFile = isProdEnv ? ".env.prod" : ".env.dev";
 const envPath = path.resolve(process.cwd(), envFile);
 
 if (fs.existsSync(envPath)) {
