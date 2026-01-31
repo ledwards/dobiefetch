@@ -88,9 +88,11 @@ const parseArgs = (argv: string[]): RunOptions => {
   const searchUrlOverride = (args.get("search-url") as string) || process.env.COLLECTOR_TARGET_SEARCH_URL;
   const startIndex = Number(args.get("start-index") ?? process.env.COLLECTOR_TARGET_START_INDEX ?? 0);
 
+  const limitValue = args.get("limit");
+
   return {
     dryRun: Boolean(args.get("dry-run")),
-    limit: Number(args.get("limit") ?? 25),
+    limit: limitValue === undefined ? Number.MAX_SAFE_INTEGER : Number(limitValue),
     delayMs: Number(args.get("delay-ms") ?? 250),
     zips,
     breed,
