@@ -28,6 +28,7 @@ type RunOptions = {
   limit: number;
   delayMs: number;
   zip: string;
+  zips: string[];
   breed: string;
   radius: string;
   startIndex: number;
@@ -72,6 +73,22 @@ const parseArgs = (argv: string[]): RunOptions => {
   }
 
   const zip = (args.get("zip") as string) || process.env.PETPLACE_ZIP || "94110";
+  const zipsRaw = (process.env.PETPLACE_ZIPS || "").trim();
+  const zips = zipsRaw
+    ? zipsRaw.split(",").map((item) => item.trim()).filter(Boolean)
+    : [
+        "95501",
+        "96001",
+        "96130",
+        "95928",
+        "95814",
+        "94103",
+        "93940",
+        "93721",
+        "93301",
+        "92262",
+        "92101"
+      ];
   const breed = (args.get("breed") as string) || process.env.PETPLACE_BREED || "DOBERMAN PINSCH";
   const radius = (args.get("radius") as string) || process.env.PETPLACE_RADIUS || "100";
   const searchUrlOverride = (args.get("search-url") as string) || process.env.PETPLACE_SEARCH_URL;
@@ -82,6 +99,7 @@ const parseArgs = (argv: string[]): RunOptions => {
     limit: Number(args.get("limit") ?? 25),
     delayMs: Number(args.get("delay-ms") ?? 250),
     zip,
+    zips,
     breed,
     radius,
     startIndex,
@@ -190,7 +208,7 @@ const extractSearchResultsFromApi = (payload: Record<string, unknown>, baseUrl: 
   return results;
 };
 
-const fetchSearchResultsFromApi = async (options: RunOptions) => {
+const fetchSearchResultsFromApi = async (options: RunOptions, zip: string) => {
   const response = await fetch("https://api.petplace.com/animal", {
     method: "POST",
     headers: {
@@ -203,7 +221,7 @@ const fetchSearchResultsFromApi = async (options: RunOptions) => {
     body: JSON.stringify({
       locationInformation: {
         clientId: null,
-        zipPostal: options.zip,
+        zipPostal: zip,
         milesRadius: options.radius
       },
       animalFilters: {
@@ -541,15 +559,23 @@ const run = async () => {
     const html = await response.text();
     results = extractSearchResults(html, searchUrl);
     if (results.length === 0) {
-      results = await fetchSearchResultsFromApi(options);
+      const zipResults = await Promise.all(options.zips.map((zip) => fetchSearchResultsFromApi(options, zip)));
+      results = zipResults.flat();
     }
   }
-  const sliced = results.slice(0, options.limit);
+  const seen = new Set<string>();
+  const deduped = results.filter((item) => {
+    const key = `${item.animalId}:${item.clientId}`;
+    if (seen.has(key)) return false;
+    seen.add(key);
+    return true;
+  });
+  const sliced = deduped.slice(0, options.limit);
 
   console.log(`Loaded search URL=${searchUrl.toString()}`);
-  console.log(`Found ${results.length} listings`);
+  console.log(`Found ${deduped.length} listings`);
 
-  if (results.length === 0) {
+  if (deduped.length === 0) {
     throw new Error(
       "No listings found. The PetPlace API returned no animals for the search filters. " +
         "Verify PETPLACE_ZIP, PETPLACE_RADIUS, and PETPLACE_BREED."

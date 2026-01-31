@@ -16,6 +16,7 @@ After this change, a user can run the scraper to collect PetPlace adoption data 
 - [x] (2026-01-31 03:40Z) Update shared types, scraper, and API to use PetPlace JSON payload.
 - [x] (2026-01-31 03:55Z) Update docs, smoke script, and env examples for new endpoints and search parameters.
 - [x] (2026-01-31 04:00Z) Update API tests to seed dog data and validate /dogs.
+- [x] (2026-01-31 04:20Z) Expand scraper to iterate CA zip codes, dedupe results, and update docs/env examples.
 - [ ] Validate end-to-end (migrate, scrape, serve, test) and record outcomes.
 
 ## Surprises & Discoveries
@@ -37,6 +38,10 @@ After this change, a user can run the scraper to collect PetPlace adoption data 
 
 - Decision: Support the PetPlace search API (`https://api.petplace.com/animal`) when HTML listings are client-rendered.
   Rationale: The HTML search page can be empty while the API returns all listings; this ensures scraping still works.
+  Date/Author: 2026-01-31 / Codex.
+
+- Decision: Iterate a default CA zip list and dedupe by `(animalId, clientId)` in memory before detail fetches.
+  Rationale: Avoid duplicate detail requests while covering multiple zip codes for statewide coverage.
   Date/Author: 2026-01-31 / Codex.
 
 - Decision: Store the full raw payload alongside normalized columns.
