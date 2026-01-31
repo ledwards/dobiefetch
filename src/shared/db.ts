@@ -35,13 +35,28 @@ const getSslConfig = (dbUrl: string): pg.PoolConfig["ssl"] | undefined => {
   return { rejectUnauthorized: false };
 };
 
+const normalizeDbUrl = (dbUrl: string) => {
+  const strictSsl = process.env.DATABASE_SSLMODE_STRICT === "true";
+  if (strictSsl) return dbUrl;
+  try {
+    const url = new URL(dbUrl);
+    if (url.searchParams.has("sslmode")) {
+      url.searchParams.delete("sslmode");
+      return url.toString();
+    }
+  } catch {
+    // Ignore malformed URLs.
+  }
+  return dbUrl;
+};
+
 export const getPool = (dbUrl: string): pg.Pool => {
   if (!dbUrl) {
     throw new Error("DATABASE_URL is required");
   }
   if (!pool) {
     pool = new Pool({
-      connectionString: dbUrl,
+      connectionString: normalizeDbUrl(dbUrl),
       ssl: getSslConfig(dbUrl)
     });
   }
