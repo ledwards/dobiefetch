@@ -33,24 +33,68 @@ X-API-Key: your-secret</pre>
   </section>
 
   <section>
-    <h2>Dog Schema (summary)</h2>
+    <h2>Dog Schema (full)</h2>
     <pre>{
   "id": "string",
+  "source": "string",
   "source_animal_id": "string",
   "client_id": "string",
   "name": "string",
+  "full_name": "string|null",
+  "animal_type": "string",
   "primary_breed": "string|null",
+  "secondary_breed": "string|null",
+  "breed1": "string|null",
+  "breed2": "string|null",
+  "breed_display": "string|null",
   "age": "string|null",
+  "age_display": "string|null",
   "gender": "string|null",
   "size_category": "string|null",
+  "description_html": "string|null",
+  "bio_html": "string|null",
+  "more_info_html": "string|null",
+  "placement_info": "string|null",
+  "weight_lbs": "number|null",
   "status": "string|null",
+  "cover_image_url": "string|null",
+  "located_at": "string|null",
+  "brought_to_shelter": "string|null",
+  "city": "string|null",
+  "state": "string|null",
+  "lat": "number|null",
+  "lon": "number|null",
+  "filter_breed_group": "string|null",
+  "client_sort": "number|null",
   "listing_url": "string",
-  "primary_photo_url": "string|null",
+  "source_api_url": "string",
+  "data_updated_note": "string|null",
+  "filters": {
+    "filter_age": "string|null",
+    "filter_gender": "string|null",
+    "filter_size": "string|null",
+    "filter_dob": "string|null",
+    "filter_days_out": "number|null",
+    "filter_primary_breed": "string|null"
+  },
   "shelter": {
     "name": "string",
+    "address_line1": "string|null",
     "city": "string|null",
-    "state": "string|null"
-  }
+    "state": "string|null",
+    "zip": "string|null",
+    "phone": "string|null",
+    "email": "string|null",
+    "website_url": "string|null",
+    "location_label": "string|null",
+    "location_address_html": "string|null"
+  },
+  "photos": [
+    { "url": "string", "is_primary": "boolean", "position": "number" }
+  ],
+  "raw_payload": "object",
+  "ingested_at": "string",
+  "source_updated_at": "string|null"
 }</pre>
   </section>
 
@@ -61,7 +105,7 @@ X-API-Key: your-secret</pre>
     <p>No auth required. Returns <code>200 OK</code> with body <code>OK</code>.</p>
 
     <h3>GET /dogs</h3>
-    <p>List dogs with optional filters and search.</p>
+    <p>List dogs with optional filters and search. Returns full dog records (including photos and raw payload).</p>
     <ul>
       <li><code>q</code>: substring search across name, breeds, description, shelter name</li>
       <li><code>breed</code>: substring match against primary breed</li>
@@ -78,7 +122,7 @@ X-API-Key: your-secret</pre>
 X-API-Key: your-secret</pre>
 
     <h3>GET /dogs/:id</h3>
-    <p>Fetch a single dog by internal id.</p>
+    <p>Fetch a single dog by internal id. Returns the same full schema as <code>/dogs</code>.</p>
     <pre>GET /dogs/abc123
 X-API-Key: your-secret</pre>
   </section>

@@ -18,26 +18,70 @@ GET /dogs
 X-API-Key: your-secret
 ```
 
-## Dog Schema (summary)
+## Dog Schema (full)
 
 ```json
 {
   "id": "string",
+  "source": "string",
   "source_animal_id": "string",
   "client_id": "string",
   "name": "string",
+  "full_name": "string|null",
+  "animal_type": "string",
   "primary_breed": "string|null",
+  "secondary_breed": "string|null",
+  "breed1": "string|null",
+  "breed2": "string|null",
+  "breed_display": "string|null",
   "age": "string|null",
+  "age_display": "string|null",
   "gender": "string|null",
   "size_category": "string|null",
+  "description_html": "string|null",
+  "bio_html": "string|null",
+  "more_info_html": "string|null",
+  "placement_info": "string|null",
+  "weight_lbs": "number|null",
   "status": "string|null",
+  "cover_image_url": "string|null",
+  "located_at": "string|null",
+  "brought_to_shelter": "string|null",
+  "city": "string|null",
+  "state": "string|null",
+  "lat": "number|null",
+  "lon": "number|null",
+  "filter_breed_group": "string|null",
+  "client_sort": "number|null",
   "listing_url": "string",
-  "primary_photo_url": "string|null",
+  "source_api_url": "string",
+  "data_updated_note": "string|null",
+  "filters": {
+    "filter_age": "string|null",
+    "filter_gender": "string|null",
+    "filter_size": "string|null",
+    "filter_dob": "string|null",
+    "filter_days_out": "number|null",
+    "filter_primary_breed": "string|null"
+  },
   "shelter": {
     "name": "string",
+    "address_line1": "string|null",
     "city": "string|null",
-    "state": "string|null"
-  }
+    "state": "string|null",
+    "zip": "string|null",
+    "phone": "string|null",
+    "email": "string|null",
+    "website_url": "string|null",
+    "location_label": "string|null",
+    "location_address_html": "string|null"
+  },
+  "photos": [
+    { "url": "string", "is_primary": "boolean", "position": "number" }
+  ],
+  "raw_payload": "object",
+  "ingested_at": "string",
+  "source_updated_at": "string|null"
 }
 ```
 
@@ -50,7 +94,7 @@ X-API-Key: your-secret
 
 ### GET /dogs
 
-List dogs with optional filters and search.
+List dogs with optional filters and search. Returns full dog records (including photos and raw payload).
 
 Query parameters:
 - `q`: substring search across name, breeds, description, shelter name
@@ -79,21 +123,65 @@ Response:
   "dogs": [
     {
       "id": "...",
-      "name": "MINDY",
-      "breed_primary": "Doberman Pinscher",
-      "age": "Adult",
-      "gender": "Female",
-      "size_category": "Large",
-      "status": "available",
-      "primary_photo_url": "https://...",
-      "detail_url": "https://www.petplace.com/pet-adoption/dogs/A1042472/CCST",
+      "source": "petplace",
       "source_animal_id": "A1042472",
       "client_id": "CCST",
+      "name": "MINDY",
+      "full_name": "MINDY (A1042472)",
+      "animal_type": "Dog",
+      "primary_breed": "Doberman Pinscher",
+      "secondary_breed": null,
+      "breed1": "DOBERMAN PINSCH",
+      "breed2": null,
+      "breed_display": "Doberman Pinscher",
+      "age": "Adult",
+      "age_display": "4 years old",
+      "gender": "Female",
+      "size_category": "Large",
+      "description_html": "...",
+      "bio_html": "...",
+      "more_info_html": "...",
+      "placement_info": "...",
+      "weight_lbs": 68,
+      "status": "available",
+      "cover_image_url": "https://...",
+      "located_at": "Contra Costa County Animal Services - Martinez",
+      "brought_to_shelter": "2025.12.22",
+      "city": "Martinez",
+      "state": "CA",
+      "lat": 37.975074,
+      "lon": -122.154813,
+      "filter_breed_group": "POINTER",
+      "client_sort": 1,
+      "listing_url": "https://www.petplace.com/pet-adoption/dogs/A1042472/CCST",
+      "source_api_url": "https://api.petplace.com/animal/A1042472/client/CCST",
+      "data_updated_note": "...",
+      "filters": {
+        "filter_age": "A",
+        "filter_gender": "F",
+        "filter_size": "L",
+        "filter_dob": "2021-12-22",
+        "filter_days_out": 39,
+        "filter_primary_breed": "DOBERMAN PINSCH"
+      },
       "shelter": {
         "name": "Contra Costa County Animal Services - Martinez",
+        "address_line1": "4800 Imhoff Place",
         "city": "Martinez",
-        "state": "CA"
-      }
+        "state": "CA",
+        "zip": "94553",
+        "phone": "(925) 608-8400",
+        "email": "lostandfound@asd.cccounty.us",
+        "website_url": "https://www.contracosta.ca.gov/7282/Animal-Services",
+        "location_label": "Martinez",
+        "location_address_html": "4800 Imhoff Place"
+      },
+      "photos": [
+        { "url": "https://...", "is_primary": true, "position": 0 }
+      ],
+      "raw_payload": { "detail": {}, "search": {} },
+      "ingested_at": "...",
+      "source_updated_at": null
     }
   ]
 }
@@ -101,48 +189,13 @@ Response:
 
 ### GET /dogs/:id
 
-Fetch a single dog by internal `id`.
+Fetch a single dog by internal `id`. Returns the same full schema as `/dogs`.
 
 Example:
 
 ```
 GET /dogs/abc123
 X-API-Key: your-secret
-```
-
-Response:
-
-```json
-{
-  "id": "...",
-  "source_animal_id": "A1042472",
-  "client_id": "CCST",
-  "name": "MINDY",
-  "primary_breed": "Doberman Pinscher",
-  "age": "Adult",
-  "gender": "Female",
-  "size_category": "Large",
-  "description_html": "...",
-  "bio_html": "...",
-  "more_info_html": "...",
-  "weight_lbs": 68,
-  "status": "available",
-  "listing_url": "https://www.petplace.com/pet-adoption/dogs/A1042472/CCST",
-  "source_api_url": "https://api.petplace.com/animal/A1042472/client/CCST",
-  "shelter": {
-    "name": "Contra Costa County Animal Services - Martinez",
-    "address_line1": "4800 Imhoff Place",
-    "city": "Martinez",
-    "state": "CA",
-    "zip": "94553",
-    "phone": "(925) 608-8400",
-    "email": "lostandfound@asd.cccounty.us",
-    "website_url": "https://www.contracosta.ca.gov/7282/Animal-Services"
-  },
-  "photos": [
-    { "url": "https://...", "is_primary": true, "position": 0 }
-  ]
-}
 ```
 
 ## Deployment Notes (Vercel)

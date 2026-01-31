@@ -116,30 +116,32 @@ export const createApp = () => {
 
       const query = `
         SELECT
-          d.id,
-          d.name,
-          d.primary_breed,
-          d.age,
-          d.gender,
-          d.size_category,
-          d.status,
-          d.listing_url,
-          d.source_animal_id,
-          d.client_id,
+          d.*,
           s.name AS shelter_name,
+          s.address_line1 AS shelter_address_line1,
           s.city AS shelter_city,
           s.state AS shelter_state,
-          p.url AS primary_photo_url
+          s.zip AS shelter_zip,
+          s.phone AS shelter_phone,
+          s.email AS shelter_email,
+          s.website_url AS shelter_website_url,
+          s.location_label AS shelter_location_label,
+          s.location_address_html AS shelter_location_address_html,
+          COALESCE(
+            json_agg(
+              json_build_object(
+                'url', p.url,
+                'is_primary', p.is_primary,
+                'position', p.position
+              )
+            ) FILTER (WHERE p.url IS NOT NULL),
+            '[]'::json
+          ) AS photos
         FROM dogs d
         LEFT JOIN shelters s ON d.shelter_id = s.id
-        LEFT JOIN LATERAL (
-          SELECT url
-          FROM photos
-          WHERE dog_id = d.id
-          ORDER BY is_primary DESC, position ASC
-          LIMIT 1
-        ) p ON true
+        LEFT JOIN photos p ON p.dog_id = d.id
         ${where}
+        GROUP BY d.id, s.id
         ORDER BY d.ingested_at DESC
         LIMIT ${pushParam(limitValue)} OFFSET ${pushParam(offsetValue)}
       `;
@@ -150,23 +152,65 @@ export const createApp = () => {
         count: result.rows.length,
         dogs: result.rows.map((row) => ({
           id: row.id,
-          name: row.name,
-          breed_primary: row.primary_breed,
-          age: row.age,
-          gender: row.gender,
-          size_category: row.size_category,
-          status: row.status,
-          primary_photo_url: row.primary_photo_url,
-          detail_url: row.listing_url,
+          source: row.source,
           source_animal_id: row.source_animal_id,
           client_id: row.client_id,
+          name: row.name,
+          full_name: row.full_name,
+          animal_type: row.animal_type,
+          primary_breed: row.primary_breed,
+          secondary_breed: row.secondary_breed,
+          breed1: row.breed1,
+          breed2: row.breed2,
+          breed_display: row.breed_display,
+          age: row.age,
+          age_display: row.age_display,
+          gender: row.gender,
+          size_category: row.size_category,
+          description_html: row.description_html,
+          bio_html: row.bio_html,
+          more_info_html: row.more_info_html,
+          placement_info: row.placement_info,
+          weight_lbs: row.weight_lbs,
+          status: row.status,
+          cover_image_url: row.cover_image_url,
+          located_at: row.located_at,
+          brought_to_shelter: row.brought_to_shelter,
+          city: row.city,
+          state: row.state,
+          lat: row.lat,
+          lon: row.lon,
+          filter_breed_group: row.filter_breed_group,
+          client_sort: row.client_sort,
+          listing_url: row.listing_url,
+          source_api_url: row.source_api_url,
+          data_updated_note: row.data_updated_note,
+          filters: {
+            filter_age: row.filter_age,
+            filter_gender: row.filter_gender,
+            filter_size: row.filter_size,
+            filter_dob: row.filter_dob,
+            filter_days_out: row.filter_days_out,
+            filter_primary_breed: row.filter_primary_breed
+          },
           shelter: row.shelter_name
             ? {
                 name: row.shelter_name,
+                address_line1: row.shelter_address_line1,
                 city: row.shelter_city,
-                state: row.shelter_state
+                state: row.shelter_state,
+                zip: row.shelter_zip,
+                phone: row.shelter_phone,
+                email: row.shelter_email,
+                website_url: row.shelter_website_url,
+                location_label: row.shelter_location_label,
+                location_address_html: row.shelter_location_address_html
               }
-            : null
+            : null,
+          photos: row.photos ?? [],
+          raw_payload: row.raw_payload,
+          ingested_at: row.ingested_at,
+          source_updated_at: row.source_updated_at
         }))
       });
     } catch (error) {
@@ -208,7 +252,11 @@ export const createApp = () => {
         animal_type: dog.animal_type,
         primary_breed: dog.primary_breed,
         secondary_breed: dog.secondary_breed,
+        breed1: dog.breed1,
+        breed2: dog.breed2,
+        breed_display: dog.breed_display,
         age: dog.age,
+        age_display: dog.age_display,
         gender: dog.gender,
         size_category: dog.size_category,
         description_html: dog.description_html,
@@ -217,6 +265,15 @@ export const createApp = () => {
         placement_info: dog.placement_info,
         weight_lbs: dog.weight_lbs,
         status: dog.status,
+        cover_image_url: dog.cover_image_url,
+        located_at: dog.located_at,
+        brought_to_shelter: dog.brought_to_shelter,
+        city: dog.city,
+        state: dog.state,
+        lat: dog.lat,
+        lon: dog.lon,
+        filter_breed_group: dog.filter_breed_group,
+        client_sort: dog.client_sort,
         listing_url: dog.listing_url,
         source_api_url: dog.source_api_url,
         data_updated_note: dog.data_updated_note,
@@ -243,7 +300,9 @@ export const createApp = () => {
             }
           : null,
         photos: photosResult.rows,
-        ingested_at: dog.ingested_at
+        raw_payload: dog.raw_payload,
+        ingested_at: dog.ingested_at,
+        source_updated_at: dog.source_updated_at
       });
     } catch (error) {
       const message = error instanceof Error ? error.message : "Database error";
