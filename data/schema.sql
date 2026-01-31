@@ -49,7 +49,6 @@ CREATE TABLE IF NOT EXISTS dogs (
   state TEXT,
   lat NUMERIC,
   lon NUMERIC,
-  distance NUMERIC,
   filter_breed_group TEXT,
   client_sort INTEGER,
   shelter_id TEXT REFERENCES shelters(id),
@@ -79,9 +78,10 @@ ALTER TABLE dogs ADD COLUMN IF NOT EXISTS city TEXT;
 ALTER TABLE dogs ADD COLUMN IF NOT EXISTS state TEXT;
 ALTER TABLE dogs ADD COLUMN IF NOT EXISTS lat NUMERIC;
 ALTER TABLE dogs ADD COLUMN IF NOT EXISTS lon NUMERIC;
-ALTER TABLE dogs ADD COLUMN IF NOT EXISTS distance NUMERIC;
 ALTER TABLE dogs ADD COLUMN IF NOT EXISTS filter_breed_group TEXT;
 ALTER TABLE dogs ADD COLUMN IF NOT EXISTS client_sort INTEGER;
+
+ALTER TABLE dogs DROP COLUMN IF EXISTS distance;
 
 CREATE UNIQUE INDEX IF NOT EXISTS idx_dogs_source_animal_client ON dogs(source, source_animal_id, client_id);
 CREATE INDEX IF NOT EXISTS idx_dogs_breed ON dogs(primary_breed);

@@ -19,7 +19,6 @@ type SearchResult = {
   state?: string | null;
   lat?: number | null;
   lon?: number | null;
-  distance?: number | null;
   filterBreedGroup?: string | null;
   clientSort?: number | null;
 };
@@ -184,7 +183,6 @@ const extractSearchResultsFromApi = (payload: Record<string, unknown>, baseUrl: 
       state: toStringOrNull(record.State),
       lat: record.lat ? Number(record.lat) : null,
       lon: record.lon ? Number(record.lon) : null,
-      distance: record.Distance ? Number(record.Distance) : null,
       filterBreedGroup: toStringOrNull(record.filterBreedGroup),
       clientSort: record.clientSort ? Number(record.clientSort) : null
     });
@@ -287,7 +285,6 @@ const normalizeDog = (payload: PetPlacePayload, source: string, searchResult?: S
     state: searchResult?.state ?? toStringOrNull(pp["State"]),
     lat: searchResult?.lat ?? null,
     lon: searchResult?.lon ?? null,
-    distance: searchResult?.distance ?? null,
     filter_breed_group: searchResult?.filterBreedGroup ?? null,
     client_sort: searchResult?.clientSort ?? null,
     shelter_id: shelterId,
@@ -394,7 +391,7 @@ const upsertDog = async (db: ReturnType<typeof getPool>, dog: DogRecord) => {
       age, age_display, gender, size_category,
       description_html, bio_html, more_info_html, placement_info,
       weight_lbs, status, cover_image_url, located_at, brought_to_shelter,
-      city, state, lat, lon, distance, filter_breed_group, client_sort,
+      city, state, lat, lon, filter_breed_group, client_sort,
       shelter_id, listing_url, source_api_url,
       data_updated_note, filter_age, filter_gender, filter_size,
       filter_dob, filter_days_out, filter_primary_breed,
@@ -405,11 +402,11 @@ const upsertDog = async (db: ReturnType<typeof getPool>, dog: DogRecord) => {
       $13, $14, $15, $16,
       $17, $18, $19, $20,
       $21, $22, $23, $24, $25,
-      $26, $27, $28, $29, $30, $31, $32,
-      $33, $34, $35,
-      $36, $37, $38, $39,
-      $40, $41, $42,
-      $43, $44, $45
+      $26, $27, $28, $29, $30, $31,
+      $32, $33, $34,
+      $35, $36, $37, $38,
+      $39, $40, $41,
+      $42, $43, $44
     )
     ON CONFLICT (source, source_animal_id, client_id) DO UPDATE SET
       name = EXCLUDED.name,
@@ -437,7 +434,6 @@ const upsertDog = async (db: ReturnType<typeof getPool>, dog: DogRecord) => {
       state = EXCLUDED.state,
       lat = EXCLUDED.lat,
       lon = EXCLUDED.lon,
-      distance = EXCLUDED.distance,
       filter_breed_group = EXCLUDED.filter_breed_group,
       client_sort = EXCLUDED.client_sort,
       shelter_id = EXCLUDED.shelter_id,
@@ -485,7 +481,6 @@ const upsertDog = async (db: ReturnType<typeof getPool>, dog: DogRecord) => {
     dog.state,
     dog.lat,
     dog.lon,
-    dog.distance,
     dog.filter_breed_group,
     dog.client_sort,
     dog.shelter_id,

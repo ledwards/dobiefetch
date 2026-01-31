@@ -45,7 +45,6 @@ export type DogRecord = {
   state: string | null;
   lat: number | null;
   lon: number | null;
-  distance: number | null;
   filter_breed_group: string | null;
   client_sort: number | null;
   shelter_id: string | null;
