@@ -10,6 +10,7 @@
     "build": "tsc",
     "start": "node dist/server/index.js",
     "dev": "node --watch dist/server/index.js",
+    "pre-scrape": "npm run build",
     "scrape": "node dist/collector/index.js",
     "test": "node --test"
   },
