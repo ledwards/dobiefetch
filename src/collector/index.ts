@@ -400,6 +400,14 @@ const run = async () => {
   console.log(`Loaded search URL=${searchUrl.toString()}`);
   console.log(`Found ${results.length} listings`);
 
+  if (results.length === 0) {
+    throw new Error(
+      "No listings found. The search results page may be client-rendered or blocked. " +
+        "Try setting PETPLACE_SEARCH_URL to a full URL that returns HTML with listing links, " +
+        "or open the search page in a browser to confirm it contains /pet-adoption/dogs/... links."
+    );
+  }
+
   if (options.dryRun) {
     console.log(`Dry-run: would fetch ${sliced.length} detail payloads`);
     return;

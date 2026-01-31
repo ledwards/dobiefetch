@@ -1,4 +1,5 @@
 -- Core dogs table based on PetPlace API payload
+DROP TABLE IF EXISTS records;
 CREATE TABLE IF NOT EXISTS shelters (
   id TEXT PRIMARY KEY,
   source TEXT NOT NULL,
