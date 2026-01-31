@@ -8,10 +8,10 @@
   },
   "scripts": {
     "build": "tsc",
-    "start": "node dist/server/index.js",
-    "dev": "node --watch dist/server/index.js",
+    "start": "node dist/src/server/index.js",
+    "dev": "node --watch dist/src/server/index.js",
     "pre-scrape": "npm run build",
-    "scrape": "node dist/collector/index.js",
+    "scrape": "node dist/src/collector/index.js",
     "test": "node --test"
   },
   "dependencies": {
