@@ -4,6 +4,10 @@
 
 - `https://dobiefetch.vercel.app`
 
+## Deploys
+
+- `git push` to `main` deploys to Vercel automatically.
+
 ## Quick checks
 
 1. Health check
