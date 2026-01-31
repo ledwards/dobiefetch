@@ -1,21 +1,18 @@
 import express from "express";
 import { config } from "../shared/config.js";
-import { ensureSchema, getPool } from "../shared/db.js";
+import { getPool } from "../shared/db.js";
 
-let dbPromise: Promise<ReturnType<typeof getPool>> | null = null;
+let db: ReturnType<typeof getPool> | null = null;
 
 const getDb = async () => {
-  if (!dbPromise) {
+  if (!db) {
     const dbUrl = config.dbUrl;
     if (!dbUrl) {
       throw new Error("DATABASE_URL is required");
     }
-    dbPromise = (async () => {
-      await ensureSchema(dbUrl);
-      return getPool(dbUrl);
-    })();
+    db = getPool(dbUrl);
   }
-  return dbPromise;
+  return db;
 };
 
 const getApiKey = (req: express.Request): string | null => {
