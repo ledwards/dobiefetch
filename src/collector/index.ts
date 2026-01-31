@@ -27,7 +27,6 @@ type RunOptions = {
   dryRun: boolean;
   limit: number;
   delayMs: number;
-  zip: string;
   zips: string[];
   breed: string;
   radius: string;
